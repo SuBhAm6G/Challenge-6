@@ -147,6 +147,7 @@ export function AppShell({
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = activeRoute === item.id;
+            const isAssistant = item.id === 'assistant';
             return (
               <button
                 key={item.id}
@@ -155,8 +156,12 @@ export function AppShell({
                 aria-current={isActive ? 'page' : undefined}
                 className={`inline-flex min-h-[40px] items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors ${
                   isActive
-                    ? 'bg-[#0F6E56] text-white shadow-sm'
-                    : 'text-[#44403C] hover:bg-[#EFE8DA]'
+                    ? isAssistant
+                      ? 'border border-amber-500 bg-amber-300/45 text-[#1C1917] shadow-sm'
+                      : 'bg-[#0F6E56] text-white shadow-sm'
+                    : isAssistant
+                      ? 'border border-amber-400/50 bg-amber-300/20 text-[#1C1917] hover:bg-amber-300/35'
+                      : 'text-[#44403C] hover:bg-[#EFE8DA]'
                 }`}
               >
                 <Icon className="h-4 w-4" aria-hidden="true" />
@@ -187,6 +192,7 @@ export function AppShell({
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = activeRoute === item.id;
+          const isAssistant = item.id === 'assistant';
           return (
             <button
               key={item.id}
@@ -194,7 +200,13 @@ export function AppShell({
               onClick={() => onNavigate(item.id)}
               aria-current={isActive ? 'page' : undefined}
               className={`flex min-h-[44px] min-w-[44px] flex-col items-center justify-center rounded-xl px-2 py-1 text-[11px] font-semibold ${
-                isActive ? 'bg-[#0F6E56] text-white' : 'text-[#44403C]'
+                isActive
+                  ? isAssistant
+                    ? 'border border-amber-500 bg-amber-300/45 text-[#1C1917]'
+                    : 'bg-[#0F6E56] text-white'
+                  : isAssistant
+                    ? 'bg-amber-300/20 text-[#1C1917]'
+                    : 'text-[#44403C]'
               }`}
             >
               <Icon className="h-4 w-4" aria-hidden="true" />
