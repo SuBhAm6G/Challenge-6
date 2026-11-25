@@ -52,12 +52,29 @@ export function App() {
     resetAllLocalData,
   } = useAppStore();
 
-  const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [locationModalOpen, setLocationModalOpen] = useState(() => {
+    try {
+      return !window.localStorage.getItem('saansathi_location_prompted');
+    } catch {
+      return false;
+    }
+  });
   const [householdModalOpen, setHouseholdModalOpen] = useState(false);
 
   useEffect(() => {
     void hydrateFromStorage();
   }, [hydrateFromStorage]);
+
+  const handleLocationModalChange = (open: boolean) => {
+    setLocationModalOpen(open);
+    if (!open) {
+      try {
+        window.localStorage.setItem('saansathi_location_prompted', '1');
+      } catch {
+        // Ignore storage access errors
+      }
+    }
+  };
 
   useEffect(() => {
     const handleOnline = () => {
@@ -117,7 +134,7 @@ export function App() {
 
       <LocationModal
         open={locationModalOpen}
-        onOpenChange={setLocationModalOpen}
+        onOpenChange={handleLocationModalChange}
         presets={locationPresets}
         selectedId={selectedLocationId}
         onSelect={(id) => void selectLocation(id)}

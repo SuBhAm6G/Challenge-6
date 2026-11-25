@@ -84,8 +84,8 @@ export function AssistantScreen() {
               </h1>
             </div>
             <p className="mt-1 text-sm text-[#57534E]">
-              Powered by Gemini 3.1 Flash Lite on the server, strictly grounded in your city’s
-              validated air-quality data and deterministic rules. Falls back offline automatically.
+              Powered by Groq AI on the server, strictly grounded in your city’s validated
+              air-quality data and deterministic rules. Falls back offline automatically.
             </p>
           </div>
           <Badge className="border-emerald-300 bg-emerald-50 text-emerald-950">
@@ -93,40 +93,13 @@ export function AssistantScreen() {
             records sent
           </Badge>
         </div>
-
-        <details className="mt-3 rounded-xl border border-[#E4DCCD] bg-[#FAF7F2] p-3 text-xs text-[#44403C]">
-          <summary className="cursor-pointer font-semibold text-[#1C1917]">
-            Inspect exact context shared with the AI assistant ({contextPkg.city}, NAQI{' '}
-            {contextPkg.aqiValue ?? 'N/A'})
-          </summary>
-          <pre className="mt-2 overflow-x-auto rounded-lg bg-white p-2 text-[11px] text-[#1C1917]">
-            {JSON.stringify(contextPkg, null, 2)}
-          </pre>
-        </details>
-      </Card>
-
-      <Card>
-        <h2 className="text-sm font-bold text-[#1C1917]">Contextual Quick Prompts</h2>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {QUICK_PROMPTS.map((q) => (
-            <button
-              key={q}
-              type="button"
-              disabled={loading}
-              onClick={() => submitQuestion(q)}
-              className="min-h-[38px] rounded-xl border border-[#D6CCBA] bg-[#FAF7F2] px-3 py-1.5 text-left text-xs font-medium text-[#1C1917] hover:bg-[#EFE8DA] disabled:opacity-50"
-            >
-              {q}
-            </button>
-          ))}
-        </div>
       </Card>
 
       <Card>
         <div className="space-y-4" aria-live="polite">
           {messages.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[#D6CCBA] bg-[#FAF7F2] p-5 text-center text-sm text-[#57534E]">
-              Ask a question below or tap any quick prompt above. Saansathi will tailor explanations
+              Ask a question below or tap any quick prompt below. Saansathi will tailor explanations
               for <strong>{contextPkg.city}</strong> and your household profile while keeping
               exposure and emissions distinct.
             </div>
@@ -159,6 +132,23 @@ export function AssistantScreen() {
             <span>{loading ? 'Thinking…' : 'Ask'}</span>
           </PrimaryButton>
         </form>
+      </Card>
+
+      <Card>
+        <h2 className="text-sm font-bold text-[#1C1917]">Contextual Quick Prompts</h2>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {QUICK_PROMPTS.map((q) => (
+            <button
+              key={q}
+              type="button"
+              disabled={loading}
+              onClick={() => submitQuestion(q)}
+              className="min-h-[38px] rounded-xl border border-[#D6CCBA] bg-[#FAF7F2] px-3 py-1.5 text-left text-xs font-medium text-[#1C1917] hover:bg-[#EFE8DA] disabled:opacity-50"
+            >
+              {q}
+            </button>
+          ))}
+        </div>
       </Card>
     </div>
   );

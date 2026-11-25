@@ -107,6 +107,7 @@ describe('Automated Repository Hygiene', () => {
         const content = readFileSync(file, 'utf8');
         expect(content).not.toMatch(/AQ\.[A-Za-z0-9_-]{20,}/);
         expect(content).not.toMatch(/AIza[A-Za-z0-9_-]{20,}/);
+        expect(content).not.toMatch(/gsk_[A-Za-z0-9]{20,}/);
       }
     }
   });

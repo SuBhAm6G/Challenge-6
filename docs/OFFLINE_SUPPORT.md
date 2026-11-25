@@ -13,5 +13,5 @@ Once the application shell has been loaded and cached by the Workbox service wor
 ## Honest Limitations
 
 - First-time visitors who have never loaded the app online cannot cache the PWA shell.
-- Live air-quality updates and Gemini 3.1 Flash Lite natural-language synthesis require network access.
+- Live air-quality updates and Groq AI natural-language synthesis require network access.
 - When no cached reading exists for a newly selected city while offline, Saansathi displays `Data unavailable` rather than substituting hardcoded numbers.

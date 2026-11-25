@@ -8,10 +8,10 @@
 [![Code Coverage](<https://img.shields.io/badge/Lines%20Coverage-88.9%25%20(Engines%2096.2%25)-0F6E56?style=flat-square>)](docs/TESTING.md)
 [![Playwright E2E](https://img.shields.io/badge/Playwright%20E2E-3%20Workflows%20Passing-2EAD33?style=flat-square&logo=playwright&logoColor=white)](tests/e2e/saansathi.spec.ts)
 [![Accessibility](https://img.shields.io/badge/WCAG%202.1%20AA-axe--core%20Clean-B45309?style=flat-square)](docs/ACCESSIBILITY.md)
-[![GenAI Model](https://img.shields.io/badge/GenAI-Gemini%203.1%20Flash%20Lite-4285F4?style=flat-square&logo=google-gemini&logoColor=white)](api/chat.ts)
+[![GenAI Model](https://img.shields.io/badge/GenAI-Groq%20%28gpt--oss--120b%29-F55036?style=flat-square)](api/chat.ts)
 [![PWA Offline](https://img.shields.io/badge/PWA-Workbox%20%2B%20IndexedDB-5A0FC8?style=flat-square)](docs/OFFLINE_SUPPORT.md)
 
-> **Saansathi** is a local-first, context-aware urban air-quality planning assistant engineered for Indian households and communities navigating severe winter smog and everyday urban air pollution. Rather than stopping at an AQI gauge or attaching an ungrounded chatbot, Saansathi unifies **real atmospheric forecast data**, **CPCB India NAQI breakpoints**, **pure deterministic decision engines**, **IndexedDB offline persistence**, and **schema-gated Gemini 3.1 Flash Lite synthesis** into an end-to-end daily decision-support system.
+> **Saansathi** is a local-first, context-aware urban air-quality planning assistant engineered for Indian households and communities navigating severe winter smog and everyday urban air pollution. Rather than stopping at an AQI gauge or attaching an ungrounded chatbot, Saansathi unifies **real atmospheric forecast data**, **CPCB India NAQI breakpoints**, **pure deterministic decision engines**, **IndexedDB offline persistence**, and **schema-gated Groq AI synthesis (`openai/gpt-oss-120b` with automatic multi-model fallback)** into an end-to-end daily decision-support system.
 
 ---
 
@@ -47,7 +47,7 @@ Every architectural choice in Saansathi is structured around measurable engineer
 | **Code Quality**      |  100   | TypeScript `strict` + `noUncheckedIndexedAccess`, zero `any`/`@ts-ignore`, modular Zustand slices, every `src/` & `api/` file $\le 250$ lines                        | `tsconfig.app.json`, `src/store/*`, `.oxlintrc.json`, `tests/quality/hygiene.test.ts`                            |
 | **Efficiency**        |  100   | Zero-dependency custom SVG/HTML hourly chart, route-level `React.lazy` code splitting, $O(n)$ pure engines, pre-indexed $O(1)$ `Map` lookups                         | `src/App.tsx`, `src/components/dashboard/HourlyForecastChart.tsx`, `vite.config.ts`                              |
 | **Testing**           |  100   | **130 Vitest tests** (engines, domain Zod bounds, provider adapters, IndexedDB, store slices, AI guardrails, screens, modals, pipeline) + **3 Playwright E2E flows** | `tests/unit/**`, `tests/integration/**`, `tests/quality/**`, `tests/e2e/saansathi.spec.ts`                       |
-| **Security**          |  100   | Server-only `GOOGLE_API_KEY`, 20 req/min rate limit, 8 KB body cap, Zod request/response gating, prompt-injection delimiters, strict CSP headers in `vercel.json`    | `api/chat.ts`, `api/_guardrails.ts`, `src/ai/safety.ts`, `vercel.json`, `tests/unit/ai/server-endpoint.test.ts`  |
+| **Security**          |  100   | Server-only `GROQ_API_KEY`, 20 req/min rate limit, 8 KB body cap, Zod request/response gating, prompt-injection delimiters, strict CSP headers in `vercel.json`      | `api/chat.ts`, `api/_guardrails.ts`, `src/ai/safety.ts`, `vercel.json`, `tests/unit/ai/server-endpoint.test.ts`  |
 | **Accessibility**     |  100   | Semantic landmarks, skip link, text+color NAQI badges, keyboard-first Radix dialogs, SVG chart $\leftrightarrow$ accessible `<table>` toggle, `axe-core` verified    | `src/components/layout/AppShell.tsx`, `src/components/ui/Primitives.tsx`, `tests/unit/ui/accessibility.test.tsx` |
 
 ---
@@ -56,19 +56,19 @@ Every architectural choice in Saansathi is structured around measurable engineer
 
 Verbatim alignment between every Challenge 6 requirement, persona, and the implemented production module:
 
-| Challenge Requirement / Persona             | Implemented Product Capability                                                                                                                                                  | Primary Code Evidence                                                                                               | Automated Verification                                                                         |
-| :------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------- |
-| **GenAI-powered assistant**                 | Context-grounded **Ask Saansathi** backed by Gemini 3.1 Flash Lite structured JSON output (`api/chat.ts`) with urgent medical symptom redirect & deterministic offline fallback | `api/chat.ts`, `src/ai/client.ts`, `src/ai/safety.ts`, `src/components/assistant/AssistantScreen.tsx`               | `tests/unit/ai/ai-safety-and-context.test.ts`, `tests/unit/ai/server-endpoint.test.ts`         |
-| **Urban Families (Persona A)**              | Household member count, school-going child flag, exercise habit, budget level, and daily routine slots persisted in IndexedDB                                                   | `src/domain/household/types.ts`, `src/components/dashboard/HouseholdModal.tsx`                                      | `tests/unit/ui/modals.test.tsx`, `tests/e2e/saansathi.spec.ts`                                 |
-| **Health-Conscious Households (Persona B)** | Voluntary local priority-protection toggles (children, older adults, pregnancy, sensitive comfort) that tighten Moderate AQI thresholds without collecting medical records      | `src/engines/routine-rules.ts`, `src/components/dashboard/HouseholdModal.tsx`                                       | `tests/unit/engines/routine-engine.test.ts`                                                    |
-| **Daily Commuters (Persona C)**             | Mode comparison across 12 Indian transport modes (`car_petrol` through `remote`), weekly shift impact calculator, and Severe-AQI cycling exposure warning                       | `src/data/emission-factors.ts`, `src/engines/impact-engine.ts`, `src/components/choices/ChoicesScreen.tsx`          | `tests/unit/engines/impact-engine.test.ts`, `tests/unit/ui/screens.test.tsx`                   |
-| **Communities (Persona D)**                 | Editable RWA / school / society clean-air organizer checklist with lead roles, deadlines, status tracking, and privacy-safe clipboard summary export                            | `src/data/community-templates.ts`, `src/components/community/CommunityScreen.tsx`                                   | `tests/unit/ui/screens.test.tsx`, `tests/e2e/saansathi.spec.ts`                                |
-| **Location**                                | 15 preset Indian cities with regional winter-smog context, custom locality tagging, and consent-first ~1 km rounded browser geolocation                                         | `src/data/cities.ts`, `src/components/dashboard/LocationModal.tsx`                                                  | `tests/unit/data/registries.test.ts`, `tests/e2e/saansathi.spec.ts`                            |
-| **Severe winter smog**                      | Official CPCB India NAQI sub-index calculation, hourly diurnal outlook visualization, forecast spike alert detection, and evening inversion guidance                            | `src/engines/aqi-interpreter.ts`, `src/engines/alert-engine.ts`, `src/components/dashboard/HourlyForecastChart.tsx` | `tests/unit/engines/aqi-interpreter.test.ts`, `tests/unit/engines/alert-and-freshness.test.ts` |
-| **Low-emission daily routines**             | Deterministic timeline covering morning exercise, commute shift / outdoor-work pacing, school pickup, errand batching, and evening wind-down                                    | `src/engines/routine-engine.ts`, `src/engines/routine-rules.ts`, `src/components/routine/RoutineScreen.tsx`         | `tests/unit/engines/routine-engine.test.ts`, `tests/unit/ui/screens.test.tsx`                  |
-| **Indoor air quality hacks**                | Ventilation window advisor paired with LPG/PNG/biomass combustion warnings, source control checklist, CADR sizing math, and explicit ozone/myth ban                             | `src/engines/indoor-engine.ts`, `src/data/indoor-actions.ts`, `src/components/indoor/IndoorScreen.tsx`              | `tests/unit/engines/indoor-engine.test.ts`, `tests/unit/ui/screens.test.tsx`                   |
-| **Direct impact of choices**                | Separate **Personal Exposure Management** summary vs. **Illustrative Avoided Emissions** calculator with "How we calculated this" formulas, assumptions, and limits             | `src/engines/impact-engine.ts`, `src/components/impact/ImpactScreen.tsx`                                            | `tests/unit/engines/impact-engine.test.ts`, `tests/integration/end-to-end-pipeline.test.ts`    |
-| **Deterministic GUI fallbacks**             | Every AI explanation capability corresponds to direct deterministic UI controls and works 100% without `GOOGLE_API_KEY` or internet access                                      | `src/store/useAppStore.ts`, `src/ai/client.ts`                                                                      | `tests/e2e/saansathi.spec.ts`                                                                  |
+| Challenge Requirement / Persona             | Implemented Product Capability                                                                                                                                              | Primary Code Evidence                                                                                               | Automated Verification                                                                         |
+| :------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------- |
+| **GenAI-powered assistant**                 | Context-grounded **Ask Saansathi** backed by Groq AI structured JSON output (`api/chat.ts`) with automatic multi-model fallback, urgent medical redirect & offline fallback | `api/chat.ts`, `src/ai/client.ts`, `src/ai/safety.ts`, `src/components/assistant/AssistantScreen.tsx`               | `tests/unit/ai/ai-safety-and-context.test.ts`, `tests/unit/ai/server-endpoint.test.ts`         |
+| **Urban Families (Persona A)**              | Household member count, school-going child flag, exercise habit, budget level, and daily routine slots persisted in IndexedDB                                               | `src/domain/household/types.ts`, `src/components/dashboard/HouseholdModal.tsx`                                      | `tests/unit/ui/modals.test.tsx`, `tests/e2e/saansathi.spec.ts`                                 |
+| **Health-Conscious Households (Persona B)** | Voluntary local priority-protection toggles (children, older adults, pregnancy, sensitive comfort) that tighten Moderate AQI thresholds without collecting medical records  | `src/engines/routine-rules.ts`, `src/components/dashboard/HouseholdModal.tsx`                                       | `tests/unit/engines/routine-engine.test.ts`                                                    |
+| **Daily Commuters (Persona C)**             | Mode comparison across 12 Indian transport modes (`car_petrol` through `remote`), weekly shift impact calculator, and Severe-AQI cycling exposure warning                   | `src/data/emission-factors.ts`, `src/engines/impact-engine.ts`, `src/components/choices/ChoicesScreen.tsx`          | `tests/unit/engines/impact-engine.test.ts`, `tests/unit/ui/screens.test.tsx`                   |
+| **Communities (Persona D)**                 | Editable RWA / school / society clean-air organizer checklist with lead roles, deadlines, status tracking, and privacy-safe clipboard summary export                        | `src/data/community-templates.ts`, `src/components/community/CommunityScreen.tsx`                                   | `tests/unit/ui/screens.test.tsx`, `tests/e2e/saansathi.spec.ts`                                |
+| **Location**                                | 15 preset Indian cities with regional winter-smog context, custom locality tagging, and consent-first ~1 km rounded browser geolocation                                     | `src/data/cities.ts`, `src/components/dashboard/LocationModal.tsx`                                                  | `tests/unit/data/registries.test.ts`, `tests/e2e/saansathi.spec.ts`                            |
+| **Severe winter smog**                      | Official CPCB India NAQI sub-index calculation, hourly diurnal outlook visualization, forecast spike alert detection, and evening inversion guidance                        | `src/engines/aqi-interpreter.ts`, `src/engines/alert-engine.ts`, `src/components/dashboard/HourlyForecastChart.tsx` | `tests/unit/engines/aqi-interpreter.test.ts`, `tests/unit/engines/alert-and-freshness.test.ts` |
+| **Low-emission daily routines**             | Deterministic timeline covering morning exercise, commute shift / outdoor-work pacing, school pickup, errand batching, and evening wind-down                                | `src/engines/routine-engine.ts`, `src/engines/routine-rules.ts`, `src/components/routine/RoutineScreen.tsx`         | `tests/unit/engines/routine-engine.test.ts`, `tests/unit/ui/screens.test.tsx`                  |
+| **Indoor air quality hacks**                | Ventilation window advisor paired with LPG/PNG/biomass combustion warnings, source control checklist, CADR sizing math, and explicit ozone/myth ban                         | `src/engines/indoor-engine.ts`, `src/data/indoor-actions.ts`, `src/components/indoor/IndoorScreen.tsx`              | `tests/unit/engines/indoor-engine.test.ts`, `tests/unit/ui/screens.test.tsx`                   |
+| **Direct impact of choices**                | Separate **Personal Exposure Management** summary vs. **Illustrative Avoided Emissions** calculator with "How we calculated this" formulas, assumptions, and limits         | `src/engines/impact-engine.ts`, `src/components/impact/ImpactScreen.tsx`                                            | `tests/unit/engines/impact-engine.test.ts`, `tests/integration/end-to-end-pipeline.test.ts`    |
+| **Deterministic GUI fallbacks**             | Every AI explanation capability corresponds to direct deterministic UI controls and works 100% without `GROQ_API_KEY` or internet access                                    | `src/store/useAppStore.ts`, `src/ai/client.ts`                                                                      | `tests/e2e/saansathi.spec.ts`                                                                  |
 
 ---
 
@@ -82,7 +82,7 @@ Saansathi enforces a clean **Functional Core / Imperative Shell** separation. Al
 flowchart TB
     subgraph External["External Services (Boundary-Validated)"]
         OM["Open-Meteo Air Quality API<br/>(~11 km CAMS Atmospheric Grid)"]
-        GEM["Google Gemini 3.1 Flash Lite<br/>(@google/genai SDK)"]
+        GEM["Groq AI Inference<br/>(gpt-oss-120b / 20b / qwen3.8-27b)"]
     end
 
     subgraph Serverless["Vercel Serverless Edge (/api/chat)"]
@@ -183,7 +183,7 @@ sequenceDiagram
     participant UI as AssistantScreen.tsx
     participant Guard as safety.ts / context-builder.ts
     participant API as /api/chat (Vercel Function)
-    participant Gemini as Gemini 3.1 Flash Lite
+    participant Gemini as Groq API (gpt-oss-120b)
 
     Household->>UI: Submits Question
     UI->>Guard: hasUrgentMedicalSymptoms(question)
@@ -264,15 +264,15 @@ Let $P$ be the number of measured pollutants ($\le 6$), $B$ the CPCB brackets pe
 
 `api/chat.ts` exposes a single hardened Edge/Serverless `POST` handler backed by `api/_guardrails.ts` and mounted seamlessly in local Vite dev/preview via `vite.config.ts`.
 
-| Boundary Control                | Configuration                                                                          | Behavior on Violation                                                           |
-| :------------------------------ | :------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------ |
-| **HTTP Method Guard**           | `POST` only (`OPTIONS` 204)                                                            | `405 METHOD_NOT_ALLOWED`                                                        |
-| **Sliding-Window Rate Limiter** | 20 requests / 60s per `x-forwarded-for` IP                                             | `429 RATE_LIMITED`                                                              |
-| **Payload Body Cap**            | `MAX_BODY_BYTES = 8192` (8 KB)                                                         | `413 PAYLOAD_TOO_LARGE`                                                         |
-| **Request Validation**          | `RequestSchema` (question 2–800 chars, bounded city context)                           | `400 INVALID_JSON` / `400 VALIDATION_ERROR`                                     |
-| **Credential Isolation**        | Server-side `process.env.GOOGLE_API_KEY` (never `VITE_*`)                              | `503 MISSING_API_KEY` → client runs offline fallback                            |
-| **Model & Parameters**          | `gemini-3.1-flash-lite`, `temperature: 0.3`, `maxOutputTokens: 1024`, `responseSchema` | Retries transient `503` once; otherwise client activates deterministic fallback |
-| **Response Schema Gate**        | `ResponseSchema` strict Zod parse prior to returning `200`                             | `502 INVALID_AI_SCHEMA`                                                         |
+| Boundary Control                | Configuration                                                                                                             | Behavior on Violation                                                                         |
+| :------------------------------ | :------------------------------------------------------------------------------------------------------------------------ | :-------------------------------------------------------------------------------------------- |
+| **HTTP Method Guard**           | `POST` only (`OPTIONS` 204)                                                                                               | `405 METHOD_NOT_ALLOWED`                                                                      |
+| **Sliding-Window Rate Limiter** | 20 requests / 60s per `x-forwarded-for` IP                                                                                | `429 RATE_LIMITED`                                                                            |
+| **Payload Body Cap**            | `MAX_BODY_BYTES = 8192` (8 KB)                                                                                            | `413 PAYLOAD_TOO_LARGE`                                                                       |
+| **Request Validation**          | `RequestSchema` (question 2–800 chars, bounded city context)                                                              | `400 INVALID_JSON` / `400 VALIDATION_ERROR`                                                   |
+| **Credential Isolation**        | Server-side `process.env.GROQ_API_KEY` (never `VITE_*`)                                                                   | `503 MISSING_API_KEY` → client runs offline fallback                                          |
+| **Model & Parameters**          | `openai/gpt-oss-120b` (fallback chain: `openai/gpt-oss-20b` → `qwen/qwen3.8-27b`), `temperature: 0.3`, `max_tokens: 2048` | Cascades through fallback models on `503`/`429`/`404`; otherwise triggers client offline plan |
+| **Response Schema Gate**        | `ResponseSchema` strict Zod parse prior to returning `200`                                                                | `502 INVALID_AI_SCHEMA`                                                                       |
 
 ---
 
@@ -303,7 +303,7 @@ npm install --legacy-peer-deps
 
 # 2. Configure optional server-side AI credentials
 cp .env.example .env.local
-# Add GOOGLE_API_KEY=... and GEMINI_MODEL=gemini-3.1-flash-lite in .env.local
+# Add GROQ_API_KEY=... and GROQ_MODEL=openai/gpt-oss-120b in .env.local
 
 # 3. Start local dev server (includes local /api/chat middleware)
 npm run dev
@@ -329,7 +329,7 @@ npm run check          # Full CI gate: typecheck && lint && format:check && test
 ```text
 api/
   _guardrails.ts            # Zod schemas, Gemini responseSchema, IP rate limiter, safety system rules
-  chat.ts                   # Serverless POST /api/chat handler for Gemini 3.1 Flash Lite
+  chat.ts                   # Serverless POST /api/chat handler (Groq AI + fallback chain)
 docs/                       # Architecture, Security, Accessibility, Testing, Data Sources, Offline, Deployment
 public/                     # Web app manifest and vector icon
 src/
@@ -365,8 +365,8 @@ tests/
 **1. Why use Open-Meteo (~11 km CAMS model) instead of directly scraping CPCB stations in the browser?**
 CPCB public dashboards do not expose a stable CORS-enabled unauthenticated JSON API suitable for reliable client-side PWA use. Saansathi uses Open-Meteo's open Copernicus CAMS API cleanly, converts CO to `mg/m³`, applies CPCB India NAQI breakpoints, and transparently discloses the ~11 km grid model and 1h averaging limitations on every screen. The `AirQualityProvider` interface in `src/providers/types.ts` supports dropping in a certified station proxy later with zero changes to engines or UI.
 
-**2. Can Saansathi run completely without a Google API key or internet connection?**
-Yes. Every calculation (India NAQI, routine planning, indoor ventilation & CADR sizing, emission math, threshold alerts) runs locally in pure TypeScript. If `GOOGLE_API_KEY` is absent or the device is offline, **Ask Saansathi** automatically renders `buildDeterministicFallbackResponse()` grounded in the household's active plan.
+**2. Can Saansathi run completely without a Groq API key or internet connection?**
+Yes. Every calculation (India NAQI, routine planning, indoor ventilation & CADR sizing, emission math, threshold alerts) runs locally in pure TypeScript. If `GROQ_API_KEY` is absent or the device is offline, **Ask Saansathi** automatically renders `buildDeterministicFallbackResponse()` grounded in the household's active plan.
 
 **3. Why does Saansathi warn against cycling to save emissions during Severe winter smog?**
 Because cutting tailpipe CO₂e (`Environmental Emissions`) and lowering particulate inhalation (`Personal Exposure`) are independent outcomes. Cycling 10 km along polluted urban roads during NAQI > 200 elevates minute ventilation and particulate intake; Saansathi explicitly flags this trade-off and prioritizes enclosed transit or remote workdays on peak smog days.

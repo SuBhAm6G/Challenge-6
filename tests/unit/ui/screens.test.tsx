@@ -150,13 +150,12 @@ describe('UI Screens & Accessible Visualizations', () => {
     expect(await screen.findByText('Install gate air sensor board')).toBeInTheDocument();
   });
 
-  it('renders AssistantScreen with inspectable minimal AI context disclosure', () => {
+  it('renders AssistantScreen with quick prompts below chat and privacy badge', () => {
     render(<AssistantScreen />);
     expect(screen.getByRole('heading', { name: /Ask Saansathi/i })).toBeInTheDocument();
-    expect(
-      screen.getByText(/Inspect exact context shared with the AI assistant/i),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/Dwarka Sector 10/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/City-level context only/i)).toBeInTheDocument();
+    expect(screen.getByText(/Contextual Quick Prompts/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Inspect exact context/i)).not.toBeInTheDocument();
   });
 
   it('updates indoor cooking fuel, budget, purifier, and burning sources in IndoorScreen', () => {

@@ -43,6 +43,10 @@ test.describe('Saansathi End-to-End Workflows', () => {
     await stubOpenMeteo(context);
 
     await page.goto('/');
+    // First-launch location popup asks for location automatically
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByRole('button', { name: /Close dialog/i }).click();
+
     await expect(page.getByRole('heading', { level: 1 })).toContainText('New Delhi');
     await expect(page.getByText(/India NAQI/i).first()).toBeVisible();
     await expect(page.getByText(/Open-Meteo Air Quality/i).first()).toBeVisible();
@@ -118,6 +122,7 @@ test.describe('Saansathi End-to-End Workflows', () => {
   }) => {
     await stubOpenMeteo(context);
     await page.goto('/');
+    await page.getByRole('button', { name: /Close dialog/i }).click();
     await expect(page.getByText(/Today’s Hourly Outlook/i)).toBeVisible();
 
     await page.getByRole('button', { name: /View accessible data table/i }).click();
@@ -138,6 +143,7 @@ test.describe('Saansathi End-to-End Workflows', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await stubOpenMeteo(context);
     await page.goto('/');
+    await page.getByRole('button', { name: /Close dialog/i }).click();
 
     const mobileNav = page.getByRole('navigation', { name: 'Mobile navigation' });
     await expect(mobileNav).toBeVisible();

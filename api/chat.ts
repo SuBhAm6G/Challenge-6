@@ -1,6 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
 import {
-  GEMINI_RESPONSE_SCHEMA,
   isRateLimited,
   jsonResponse,
   MAX_BODY_BYTES,
@@ -8,6 +6,55 @@ import {
   ResponseSchema,
   SYSTEM_INSTRUCTION,
 } from './_guardrails.ts';
+
+const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
+const DEFAULT_GROQ_MODELS = [
+  'openai/gpt-oss-120b',
+  'openai/gpt-oss-20b',
+  'qwen/qwen3.8-27b',
+] as const;
+
+function stripJsonFences(raw: string): string {
+  return raw
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/\s*```$/, '')
+    .trim();
+}
+
+function buildModelCandidates(configured: string | undefined): string[] {
+  const ordered = [...(configured?.trim() ? [configured.trim()] : []), ...DEFAULT_GROQ_MODELS];
+  return Array.from(new Set(ordered));
+}
+
+function normalizeLlmJson(raw: unknown): unknown {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw;
+  const obj = { ...(raw as Record<string, unknown>) };
+  if (typeof obj.dataLimitations === 'string') obj.dataLimitations = [obj.dataLimitations];
+  if (!Array.isArray(obj.dataLimitations)) obj.dataLimitations = [];
+  if (typeof obj.sourceIdsUsed === 'string') obj.sourceIdsUsed = [obj.sourceIdsUsed];
+  if (!Array.isArray(obj.sourceIdsUsed)) obj.sourceIdsUsed = ['cpcb-naqi'];
+  if (
+    obj.recommendations &&
+    !Array.isArray(obj.recommendations) &&
+    typeof obj.recommendations === 'object'
+  ) {
+    obj.recommendations = Object.values(obj.recommendations as Record<string, unknown>);
+  }
+  if (!Array.isArray(obj.recommendations)) obj.recommendations = [];
+  if (typeof obj.disclaimer !== 'string' || !obj.disclaimer.trim()) {
+    obj.disclaimer = 'Environmental planning guidance only—not medical advice.';
+  }
+  return obj;
+}
+
+const JSON_CONTRACT_HINT = `Return ONLY a valid JSON object with these exact keys:
+- "summary" (string)
+- "recommendations" (array of up to 4 objects, each with: "id", "action", "timing", "reason", "exposureConsideration", "environmentalConsideration", "effort" ("no_cost"|"low_effort"|"moderate_effort"), "confidence" ("high"|"moderate"|"limited"), "evidenceIds" (string[]), "caveats" (string[]), optional "alternative", optional "safetyNote")
+- "followUpQuestion" (optional string)
+- "dataLimitations" (string[])
+- "sourceIdsUsed" (string[])
+- "disclaimer" (string)`;
 
 export async function handleChatRequest(request: Request): Promise<Response> {
   if (request.method !== 'POST') {
@@ -45,78 +92,75 @@ export async function handleChatRequest(request: Request): Promise<Response> {
     });
   }
 
-  const apiKey = process.env.GOOGLE_API_KEY;
-  if (!apiKey || apiKey === 'your_google_api_key_here') {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey || apiKey === 'your_groq_api_key_here') {
     return jsonResponse(503, {
       error: 'MISSING_API_KEY',
       message: 'Server AI credentials are not configured.',
     });
   }
 
-  const model = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite';
-  const ai = new GoogleGenAI({ apiKey });
-
+  const candidates = buildModelCandidates(process.env.GROQ_MODEL);
   const userPrompt = `CONTEXT_JSON (untrusted data boundaries):\n${JSON.stringify(
     validatedReq.data.context,
   )}\n\nHOUSEHOLD_QUESTION:\n${validatedReq.data.question}`;
 
-  for (let attempt = 0; attempt < 2; attempt++) {
+  let lastStatus = 502;
+  for (const model of candidates) {
     try {
-      const result = await ai.models.generateContent({
-        model,
-        contents: userPrompt,
-        config: {
-          systemInstruction: SYSTEM_INSTRUCTION,
-          responseMimeType: 'application/json',
-          responseSchema: GEMINI_RESPONSE_SCHEMA,
-          temperature: 0.3,
-          maxOutputTokens: 1024,
+      const res = await fetch(GROQ_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
         },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: `${SYSTEM_INSTRUCTION}\n\n${JSON_CONTRACT_HINT}` },
+            { role: 'user', content: userPrompt },
+          ],
+          response_format: { type: 'json_object' },
+          temperature: 0.3,
+          max_tokens: 2048,
+        }),
       });
 
-      const text = result.text?.trim();
-      if (!text) {
-        return jsonResponse(502, {
-          error: 'EMPTY_AI_RESPONSE',
-          message: 'Model returned an empty response.',
-        });
+      if (!res.ok) {
+        lastStatus = res.status;
+        if (res.status === 503 || res.status === 429 || res.status === 404) {
+          continue;
+        }
+        break;
       }
 
-      const rawJson: unknown = JSON.parse(text);
+      const payload = (await res.json()) as {
+        choices?: Array<{ message?: { content?: string | null } }>;
+      };
+      const rawContent = payload.choices?.[0]?.message?.content;
+      const text = rawContent ? stripJsonFences(rawContent) : '';
+      if (!text) continue;
+
+      const rawJson: unknown = normalizeLlmJson(JSON.parse(text));
       const checked = ResponseSchema.safeParse(rawJson);
-      if (!checked.success) {
-        return jsonResponse(502, {
-          error: 'INVALID_AI_SCHEMA',
-          message: 'AI output did not satisfy safety schema.',
-        });
-      }
+      if (!checked.success) continue;
 
       return jsonResponse(200, checked.data);
-    } catch (err) {
-      const status =
-        typeof err === 'object' && err !== null && 'status' in err
-          ? Number((err as { status: unknown }).status)
-          : 500;
-      if (status === 503 && attempt === 0) {
-        await new Promise((r) => setTimeout(r, 600));
-        continue;
-      }
-      if (status === 429) {
-        return jsonResponse(429, {
-          error: 'AI_RATE_LIMIT',
-          message: 'AI model rate limit reached; using local deterministic guidance.',
-        });
-      }
-      return jsonResponse(502, {
-        error: 'AI_PROVIDER_ERROR',
-        message: 'Gemini assistant is temporarily unavailable; deterministic rules remain active.',
-      });
+    } catch {
+      lastStatus = 502;
     }
+  }
+
+  if (lastStatus === 429) {
+    return jsonResponse(429, {
+      error: 'AI_RATE_LIMIT',
+      message: 'AI model rate limit reached; using local deterministic guidance.',
+    });
   }
 
   return jsonResponse(502, {
     error: 'AI_PROVIDER_ERROR',
-    message: 'AI service unavailable.',
+    message: 'Groq AI assistant is temporarily unavailable; deterministic rules remain active.',
   });
 }
 

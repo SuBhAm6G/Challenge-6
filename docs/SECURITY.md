@@ -2,7 +2,7 @@
 
 ## Controls Implemented
 
-1. **Server-Side Secret Isolation:** `GOOGLE_API_KEY` is accessed only in `api/chat.ts` (Vercel serverless function and local Vite dev middleware). Client code never receives or bundles any API key.
+1. **Server-Side Secret Isolation:** `GROQ_API_KEY` is accessed only in `api/chat.ts` (Vercel serverless function and local Vite dev middleware). Client code never receives or bundles any API key.
 2. **Input & Output Validation:** Both `api/chat.ts` and `src/ai/client.ts` validate request payloads (<= 8 KB server limit, 800-char user question cap) and AI structured responses with Zod.
 3. **Rate Limiting & Prompt-Injection Defense:** `api/chat.ts` enforces an IP-keyed sliding-window limit (20 requests/minute) and isolates untrusted user context inside explicit boundaries beneath a fixed system instruction.
 4. **Medical & Environmental Safety Guardrails:** `src/ai/safety.ts` blocks ozone-generator suggestions, medication modifications, sealing rooms with active fuel combustion, cycling during Severe/Very Poor AQI, invented URLs, and urgent symptom queries (redirected to emergency medical care).

@@ -23,13 +23,13 @@ function validContext() {
 }
 
 describe('Serverless /api/chat Endpoint Security & Validation', () => {
-  const originalKey = process.env.GOOGLE_API_KEY;
+  const originalKey = process.env.GROQ_API_KEY;
 
   afterEach(() => {
     if (originalKey === undefined) {
-      delete process.env.GOOGLE_API_KEY;
+      delete process.env.GROQ_API_KEY;
     } else {
-      process.env.GOOGLE_API_KEY = originalKey;
+      process.env.GROQ_API_KEY = originalKey;
     }
   });
 
@@ -77,7 +77,7 @@ describe('Serverless /api/chat Endpoint Security & Validation', () => {
   });
 
   it('returns 503 MISSING_API_KEY gracefully when server credentials are absent', async () => {
-    delete process.env.GOOGLE_API_KEY;
+    delete process.env.GROQ_API_KEY;
     const req = new Request('http://localhost/api/chat', {
       method: 'POST',
       headers: { 'x-forwarded-for': '10.0.0.5', 'content-type': 'application/json' },

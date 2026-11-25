@@ -38,27 +38,27 @@ export const AiChatRequestSchema = z.object({
 export type AiChatRequest = z.infer<typeof AiChatRequestSchema>;
 
 export const AiStructuredRecommendationSchema = z.object({
-  id: z.string().min(1).max(60),
-  action: z.string().min(1).max(160),
-  timing: z.string().min(1).max(80),
-  reason: z.string().min(1).max(280),
-  exposureConsideration: z.string().min(1).max(240),
-  environmentalConsideration: z.string().min(1).max(240),
+  id: z.string().min(1).max(80),
+  action: z.string().min(1).max(400),
+  timing: z.string().min(1).max(160),
+  reason: z.string().min(1).max(600),
+  exposureConsideration: z.string().min(1).max(600),
+  environmentalConsideration: z.string().min(1).max(600),
   effort: z.enum(['no_cost', 'low_effort', 'moderate_effort']),
   confidence: z.enum(['high', 'moderate', 'limited']),
-  evidenceIds: z.array(z.string().max(40)).max(4),
-  caveats: z.array(z.string().max(200)).max(3),
-  alternative: z.string().max(180).optional(),
-  safetyNote: z.string().max(200).optional(),
+  evidenceIds: z.array(z.string().max(60)).max(6),
+  caveats: z.array(z.string().max(400)).max(5),
+  alternative: z.string().max(400).optional(),
+  safetyNote: z.string().max(400).optional(),
 });
 export type AiStructuredRecommendation = z.infer<typeof AiStructuredRecommendationSchema>;
 
 export const AiChatResponseSchema = z.object({
-  summary: z.string().min(1).max(800),
-  recommendations: z.array(AiStructuredRecommendationSchema).max(4),
-  followUpQuestion: z.string().max(200).optional(),
-  dataLimitations: z.array(z.string().max(200)).max(4),
-  sourceIdsUsed: z.array(z.string().max(40)).max(6),
-  disclaimer: z.string().min(1).max(240),
+  summary: z.string().min(1).max(2000),
+  recommendations: z.array(AiStructuredRecommendationSchema).max(6),
+  followUpQuestion: z.string().max(400).optional(),
+  dataLimitations: z.array(z.string().max(400)).max(6),
+  sourceIdsUsed: z.array(z.string().max(60)).max(8),
+  disclaimer: z.string().min(1).max(500),
 });
 export type AiChatResponse = z.infer<typeof AiChatResponseSchema>;

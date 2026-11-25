@@ -18,11 +18,11 @@ function localApiPlugin(env: Record<string, string>): Plugin {
       ) => void,
     ) => void;
   }) => {
-    if (env.GOOGLE_API_KEY && !process.env.GOOGLE_API_KEY) {
-      process.env.GOOGLE_API_KEY = env.GOOGLE_API_KEY;
+    if (env.GROQ_API_KEY && !process.env.GROQ_API_KEY) {
+      process.env.GROQ_API_KEY = env.GROQ_API_KEY;
     }
-    if (env.GEMINI_MODEL && !process.env.GEMINI_MODEL) {
-      process.env.GEMINI_MODEL = env.GEMINI_MODEL;
+    if (env.GROQ_MODEL && !process.env.GROQ_MODEL) {
+      process.env.GROQ_MODEL = env.GROQ_MODEL;
     }
 
     middlewares.use('/api/chat', async (req, res, next) => {

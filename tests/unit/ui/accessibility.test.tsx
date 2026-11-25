@@ -9,6 +9,7 @@ import { useAppStore } from '../../../src/store/useAppStore.ts';
 describe('Accessibility & Core UI Audit', () => {
   beforeEach(() => {
     resetDbHandleForTests();
+    window.localStorage.setItem('saansathi_location_prompted', '1');
     const sample = buildSampleWinterSmogBundle();
     vi.stubGlobal(
       'fetch',
