@@ -1,0 +1,20 @@
+{
+  "name": "Saansathi — Clean-Air Companion",
+  "short_name": "Saansathi",
+  "description": "Make everyday choices for cleaner air. Context-aware urban air-quality planning for families and communities.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FAF7F2",
+  "theme_color": "#0F6E56",
+  "orientation": "portrait-primary",
+  "categories": ["health", "lifestyle", "utilities"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
