@@ -1,69 +1,91 @@
-# Testing Strategy & Verification Report
+# Testing Strategy, Coverage Report & Quality Gate Verification
 
-## Verification Architecture Overview
-
-Saansathi pairs strict static analysis with four automated testing layers covering deterministic math, external schemas, IndexedDB persistence, Zustand concurrency, serverless Groq AI endpoints, UI workflows, and real-browser accessibility.
-
-| Verification Gate               | Tooling & Scope                                                                                                         | Result                                                         |
-| :------------------------------ | :---------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------- |
-| **Type Safety**                 | `tsc -b --noEmit` (`tsconfig.app.json`, `tsconfig.node.json`, `tsconfig.test.json`) across `src/`, `api/`, and `tests/` | **0 errors**                                                   |
-| **Static Linting**              | `oxlint` (`react`, `typescript`, `oxc`, `jsx-a11y`) across **105 files** (zero test exclusions)                         | **0 warnings, 0 errors**                                       |
-| **Code Formatting**             | `prettier --check .` + `prettier-plugin-tailwindcss`                                                                    | **100% compliant**                                             |
-| **Unit, Integration & Hygiene** | **147 Vitest tests across 20 test files** (`jsdom` + `fake-indexeddb`)                                                  | **147 / 147 passing**                                          |
-| **Coverage Enforcement**        | `@vitest/coverage-v8` across `src/` **and** `api/` with enforced CI thresholds (`90/82/88/90`)                          | **93.38% stmts · 82.87% branch · 93.47% funcs · 95.46% lines** |
-| **Browser E2E & Real Contrast** | **4 Playwright Chromium workflows** + injected `axe-core` CSS `color-contrast` verification                             | **4 / 4 passing**                                              |
+Saansathi treats automated verification as a first-class architectural pillar. Every calculation engine, schema boundary, IndexedDB adapter, Zustand concurrency rule, serverless Groq endpoint, accessibility invariant, and real-browser workflow is verified across **four deterministic test layers** backed by strict compiler checks, zero-warning linting, and enforced V8 coverage thresholds across both `src/` and `api/`.
 
 ---
 
-## Automated Test Suite Breakdown (`147` Vitest Tests)
+## 1. Continuous Integration Pipeline & Quality Gate Architecture
 
-1. **Deterministic Engine Unit Tests (`tests/unit/engines/` — 58 tests):**
-   - `aqi-interpreter.test.ts` (13 tests): CPCB India NAQI breakpoints across PM2.5, PM10, NO₂, SO₂, CO, and O₃; CO `µg/m³ -> mg/m³` conversion; minimum 3-pollutant coverage check; averaging-period mismatch disclosure; extreme `> 500` scaling; explicit rejection of foreign-scale substitution.
-   - `activity-window.test.ts` (8 tests): Daytime 06:00–21:00 window filtering, ascending average NAQI ranking, elevated `> 200` caveats, null skipping, 12h formatting.
-   - `routine-engine.test.ts` (9 tests): Morning indoor swap, priority-protection tightening at Moderate AQI, `outdoor_work` PPE caveats, hybrid/remote vs. metro vs. carpool shifts, Severe-AQI cycling exclusion, unavailable-reading safety.
-   - `indoor-engine.test.ts` (10 tests): Gas/biomass combustion ventilation interlock vs. induction kitchens, ozone generator exclusion, CADR room-area math, budget filtering, door-sealing rules.
-   - `impact-engine.test.ts` (9 tests): Documented Indian transport emission factors, null tailpipe PM2.5/NOₓ preservation, zero/invalid trip fallback, Severe-AQI cycling exposure warnings.
-   - `alert-and-freshness.test.ts` (11 tests): All freshness categories, category worsening alerts, forecast spikes, 14-day purifier maintenance checks, `dedupKey` uniqueness.
-2. **Domain Schemas & Data Registries (`tests/unit/domain/`, `tests/unit/data/` — 14 tests):**
-   - `schemas.test.ts` (9 tests): Positive and negative boundary validation across all 7 domain schemas and AI contracts.
-   - `registries.test.ts` (5 tests): Monotonic CPCB breakpoint consistency, India coordinate bounds for all 15 cities, emission factor completeness, HTTPS source URLs.
-3. **Providers, IndexedDB & Zustand Store (`tests/unit/providers/`, `tests/unit/storage/`, `tests/unit/store/` — 17 tests):**
-   - `open-meteo.test.ts` (4 tests): Valid response mapping, CO conversion, invalid coordinate rejection, `429`/5xx/malformed JSON/schema failure/timeout/caller `AbortSignal` handling, sample scenario checks.
-   - `indexeddb.test.ts` (6 tests): Full IndexedDB round-trips, corrupted record quarantine, invalid write rejection, complete reset.
-   - `app-store.test.ts` (7 tests): Hydration, demo toggle, location CRUD + last-preset guard, storage write failure propagation, `saansathi_location_prompted` reset cleanup, single-flight `activeAqRequestId` race-condition protection, offline cache fallback.
-4. **AI Privacy, Safety Sanitization & `/api/chat` Endpoint (`tests/unit/ai/` — 17 tests):**
-   - `ai-safety-and-context.test.ts` (7 tests): Locality/coordinate/household stripping, urgent symptom medical redirects, prohibited ozone/medication/kitchen-sealing/cycling filtering, caller `AbortSignal`, deterministic offline fallback.
-   - `server-endpoint.test.ts` (10 tests): `stripJsonFences`, `normalizeLlmJson` edge cases, `405` method guard, `413` 8 KB cap, `400` JSON/Zod errors, `503` missing key resilience, mocked Groq `200 OK`, multi-model fallback cascade (`503 -> 200`), `502` malformed LLM output, upstream `429 AI_RATE_LIMIT`, and 20-req/min IP `429 RATE_LIMITED`.
-5. **UI Screens, Modals, Primitives, Onboarding & Accessibility (`tests/unit/ui/` — 33 tests):**
-   - `screens.test.tsx` (19 tests): Interactive controls across all 7 routes, mocked `groq_ai` completion + safety warnings, clipboard summary export, debounced community name persistence, `aria-pressed` toggles.
-   - `modals.test.tsx` (5 tests): City/place presets, `Continue with Current`, browser geolocation grant (`0.01°` rounding)/denial/unavailable/error paths, stale-draft refresh on profile prop update.
-   - `primitives.test.tsx` (4 tests): Accessible buttons, badges, Radix modal close, `StatusBanner` storage/provider/AI fallback notices, and `ErrorBoundary` route crash recovery.
-   - `app-shell.test.tsx` (2 tests): First-launch `LocationModal` localStorage gate, `online`/`offline` listeners, header controls, and all 7 lazy routes.
-   - `accessibility.test.tsx` (3 tests): All 7 screens + both modals audited with `axe-core` for **zero violations at any severity level**, plus semantic landmarks, `scope="col"`, `<caption>`, and unique toggle names.
-6. **End-to-End Integration & Automated Hygiene (`tests/integration/`, `tests/quality/` — 6 tests):**
-   - `end-to-end-pipeline.test.ts` (1 test): Full dataflow from raw Open-Meteo JSON through NAQI, engines, minimal AI context, and IndexedDB.
-   - `hygiene.test.ts` (5 tests): Mandatory docs/manifests, `.gitignore` `.env.example` check, `package.json` scripts & `node >= 20`, zero `any`/`@ts-ignore`/lint-disable/client `console.*`, **strict `<= 200`-line limit** across all `src/` and `api/` files, zero Gemini leftovers, and no leaked API keys.
+```mermaid
+flowchart LR
+    DEV["Local / PR Commit"] --> FMT["Prettier + Tailwind Check<br/>(npm run format:check)"]
+    FMT --> TSC["Strict TypeScript<br/>(src + api + tests: 0 errors)"]
+    TSC --> LINT["Oxlint + jsx-a11y<br/>(105 files: 0 warnings)"]
+    LINT --> VITEST["147 Vitest Tests (20 Files)<br/>Enforced V8 Thresholds (src + api)"]
+    VITEST --> BUILD["Production Vite + Workbox Build<br/>(dist/ + 20 precache entries)"]
+    BUILD --> E2E["4 Playwright Chromium Workflows<br/>Real-Browser axe-core Contrast & Offline Reload"]
+```
 
 ---
 
-## Playwright Chromium E2E Workflows (`tests/e2e/saansathi.spec.ts` — 4 Workflows)
+## 2. Verification Summary & Enforced Gate Metrics
 
-1. **Onboarding & Offline Persistence:** First-launch location popup, Sample Demo toggle, custom locality addition, Household profile persistence, offline reload recovery, and reconnection refresh.
-2. **Core Household & Community Workflows:** Chart-to-table toggle, Routine completion, Indoor toolkit checklist, Severe-smog cycling trade-off alert, Choices -> Impact logging, and Community checklist additions.
-3. **Mobile Navigation, Live AI, Urgent Redirect & Offline Fallback:** `390×844` mobile bottom navigation, mocked `/api/chat` `200 OK` response, urgent symptom `112 / 108` redirect, and unrouted offline deterministic fallback.
-4. **Real-Browser `axe-core` Contrast & Keyboard Navigation:** Tab-to-Skip-Link focus test plus live Chromium `axe-core` WCAG 2.1 AA + CSS `color-contrast` verification on Home and the amber-highlighted Ask Saansathi route (**0 violations**).
+| Verification Layer              | Tooling & Configuration                                                             | Scope & Enforced Thresholds                                                                                                                                               | Observed Result                                                  |
+| :------------------------------ | :---------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------- |
+| **Strict Type Checking**        | `tsc -b --noEmit` (`tsconfig.app.json`, `tsconfig.node.json`, `tsconfig.test.json`) | `strict`, `noImplicitAny`, `strictNullChecks`, `noUncheckedIndexedAccess`, `noUnusedLocals/Parameters` across `src/`, `api/`, and `tests/`                                | **0 errors**                                                     |
+| **Static & A11y Linting**       | `oxlint` (`.oxlintrc.json`)                                                         | `react`, `typescript`, `oxc`, and `jsx-a11y` rules across **105 files** (zero test exclusions)                                                                            | **0 warnings, 0 errors**                                         |
+| **Formatting Consistency**      | `prettier --check .` + `prettier-plugin-tailwindcss`                                | All TypeScript, TSX, JSON, CSS, and Markdown files                                                                                                                        | **100% compliant**                                               |
+| **Unit, Integration & Hygiene** | `vitest run --coverage` (`vitest.config.ts`)                                        | **20 test files** covering engines, Zod boundaries, registries, providers, IndexedDB, store slices, `/api/chat`, UI screens, modals, `ErrorBoundary`, `axe-core`, hygiene | **147 / 147 passing**                                            |
+| **V8 Coverage Gate**            | `@vitest/coverage-v8` (`src/**/*.ts(x)` + `api/**/*.ts`)                            | Enforced minimums: `90%` stmts · `82%` branches · `88%` funcs · `90%` lines                                                                                               | **93.38% stmts · 82.96% branches · 93.47% funcs · 95.46% lines** |
+| **Production PWA Bundle**       | `tsc -b && vite build` (`vite-plugin-pwa`)                                          | Route-level lazy chunking + Workbox manifest generation                                                                                                                   | **416 ms build · 20 entries (568.24 KiB)**                       |
+| **Real-Browser E2E & A11y**     | `@playwright/test` (`tests/e2e/saansathi.spec.ts`)                                  | 4 Chromium workflows + injected `axe-core` CSS `color-contrast` & keyboard focus tests                                                                                    | **4 / 4 passing (0 axe violations)**                             |
 
 ---
 
-## Verification Commands
+## 3. Detailed Module Coverage Breakdown (`npm run coverage`)
+
+| Module Group                                   | Representative Files Verified                                                                                                                                   |  Statements   |   Branches    |   Functions   |     Lines     |
+| :--------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-----------: | :-----------: | :-----------: | :-----------: |
+| **All Measured (`src/` + `api/`)**             | Full client core, UI shell, and serverless edge handler                                                                                                         | **`93.38%`**  | **`82.96%`**  | **`93.47%`**  | **`95.46%`**  |
+| **Serverless API (`api/`)**                    | `api/chat.ts`, `api/_guardrails.ts`                                                                                                                             |   `93.40%`    |   `89.83%`    | **`100.00%`** |   `93.97%`    |
+| **Decision Engines (`src/engines/`)**          | All 10 pure NAQI, routine, indoor, impact, window, freshness & alert modules                                                                                    |   `93.92%`    |   `89.13%`    | **`100.00%`** |   `96.88%`    |
+| **GenAI Safety & Client (`src/ai/`)**          | `context-builder.ts`, `safety.ts`, `schemas.ts`, `client.ts`                                                                                                    |   `95.23%`    |   `89.13%`    |   `81.25%`    | **`100.00%`** |
+| **Data & Domain (`src/data/`, `src/domain/`)** | CPCB breakpoints, 15 cities, emission factors, 7 Zod domain schemas                                                                                             | **`100.00%`** | **`100.00%`** | **`100.00%`** | **`100.00%`** |
+| **Providers (`src/providers/`)**               | `open-meteo.ts`, `open-meteo-schema.ts`, `sample-data.ts`, `types.ts`                                                                                           |   `94.94%`    |   `88.88%`    |   `81.81%`    |   `97.87%`    |
+| **UI Primitives & Core Screens**               | `Primitives.tsx`, `ErrorBoundary.tsx`, `StatusBanner.tsx`, `AlertsCard.tsx`, `ImpactScreen.tsx`, `ChoicesScreen.tsx`, `RoutineScreen.tsx`, `HouseholdModal.tsx` | **`100.00%`** |  `75%–100%`   | **`100.00%`** | **`100.00%`** |
+| **Zustand Store (`src/store/`)**               | `aqSlice.ts`, `planningSlice.ts`, `useAppStore.ts`, `defaults.ts`                                                                                               |   `90.35%`    |   `68.18%`    |   `90.62%`    |   `93.06%`    |
+
+---
+
+## 4. Automated Test Suite Inventory (`147` Vitest Tests Across `20` Files)
+
+| Suite Category                  | File(s)                                                                                             | Count | Key Edge Cases & Negative Boundaries Verified                                                                                                                                                                                                                                       |
+| :------------------------------ | :-------------------------------------------------------------------------------------------------- | :---: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **India NAQI Engine**           | `tests/unit/engines/aqi-interpreter.test.ts`                                                        |  13   | All 6 pollutants (`PM2.5`, `PM10`, `NO2`, `SO2`, `CO`, `O3`), `CO` `µg/m3 -> mg/m3` conversion, `< 3` pollutant rule, `1h vs 24h/8h` disclosure, `> 500` extrapolation, negative/NaN rejection, zero US EPA/EAQI substitution                                                       |
+| **Activity Windows**            | `tests/unit/engines/activity-window.test.ts`                                                        |   8   | Daytime `06:00–21:00` pair scoring, ascending NAQI sort, `> 200` elevated caveat, `null` interpolation gaps, 12h formatting                                                                                                                                                         |
+| **Routine Planner**             | `tests/unit/engines/routine-engine.test.ts`                                                         |   9   | Morning indoor swap, protection-flag sensitivity at `Moderate`, `outdoor_work` PPE caveats, hybrid/remote vs. metro vs. carpool, Severe cycling exclusion, `null` reading safety                                                                                                    |
+| **Indoor Air Toolkit**          | `tests/unit/engines/indoor-engine.test.ts`                                                          |  10   | LPG/PNG/biomass exhaust requirement vs. induction kitchens, ozone generator ban, CADR `m3/h -> m2` bedroom sizing, budget filtering, door-sealing thresholds                                                                                                                        |
+| **Impact & Emissions**          | `tests/unit/engines/impact-engine.test.ts`                                                          |   9   | WRI India / CEA passenger-km arithmetic, preserved `null` tailpipe PM2.5/NOx on EV/Metro/Bus, zero/invalid trip fallback, Severe cycling warning                                                                                                                                    |
+| **Alerts & Freshness**          | `tests/unit/engines/alert-and-freshness.test.ts`                                                    |  11   | All freshness states (`recent`, `delayed`, `last_known`, `stale`, `forecast`, `unavailable`), threshold transitions, 12h forecast spikes, 14-day HEPA filter check, `dedupKey` uniqueness                                                                                           |
+| **Domain & Registry Contracts** | `schemas.test.ts` (9), `registries.test.ts` (5)                                                     |  14   | Boundary validation across 7 Zod domain schemas + AI schemas; monotonic CPCB tables, India lat/lon bounds for 15 cities, HTTPS citation URLs                                                                                                                                        |
+| **Open-Meteo Adapter**          | `tests/unit/providers/open-meteo.test.ts`                                                           |   4   | Valid mapping, `null` omission, invalid lat/lon rejection (`-90..90`, `-180..180`), HTTP `429`/5xx, malformed JSON, schema failure, `AbortError` timeout, pre-aborted caller `AbortSignal`                                                                                          |
+| **IndexedDB & Store Slices**    | `indexeddb.test.ts` (6), `app-store.test.ts` (7)                                                    |  13   | IndexedDB round-trips, corrupted record quarantine, invalid payload rejection, storage failure propagation (`storageWarning`), `saansathi_location_prompted` reset cleanup, single-flight `activeAqRequestId` race guard, offline AQ cache fallback                                 |
+| **AI Privacy & Safety Rails**   | `tests/unit/ai/ai-safety-and-context.test.ts`                                                       |   7   | Coordinates/locality/household name stripping, urgent symptom redirect (`112/108`) with zero `fetch`, ozone/medication/gas-sealing/Severe-cycling filtering, invalid URL fallback, caller `AbortSignal`, deterministic offline fallback                                             |
+| **Serverless `/api/chat`**      | `tests/unit/ai/server-endpoint.test.ts`                                                             |  10   | `stripJsonFences`, `normalizeLlmJson` coercion, `405` non-POST, `413` `> 8 KB`, `400` malformed JSON/Zod, `503` missing key, mocked Groq `200 OK`, `503 -> 200` model cascade, `502` malformed LLM output, upstream `429 AI_RATE_LIMIT`, 20-req/min IP `429 RATE_LIMITED`           |
+| **UI Screens & Onboarding**     | `screens.test.tsx` (19), `modals.test.tsx` (5), `primitives.test.tsx` (4), `app-shell.test.tsx` (2) |  30   | All 7 lazy routes, `groq_ai` completion + `safetyWarnings` banner, debounced community writes + clipboard export, geolocation grant/deny/error/unavailable, `HouseholdModal` fresh prop sync, `StatusBanner` warnings, `ErrorBoundary` crash recovery, `online`/`offline` listeners |
+| **Accessibility Audits**        | `tests/unit/ui/accessibility.test.tsx`                                                              |   3   | Full `axe-core` audit (all violation severities) across `AppShell` + all 7 routes + `LocationModal` + `HouseholdModal`, landmarks, skip link, `scope="col"`, unique button names                                                                                                    |
+| **Pipeline & Code Hygiene**     | `end-to-end-pipeline.test.ts` (1), `hygiene.test.ts` (5)                                            |   6   | Full Open-Meteo -> NAQI -> Engines -> AI Context -> IndexedDB pipeline; required manifests, `.gitignore` `.env.example`, `node >= 20`, zero `any`/`@ts-ignore`/client `console.*`/Gemini leftovers/keys, **strict `<= 200`-line limit** across `src/` & `api/`                      |
+
+---
+
+## 5. Playwright Chromium E2E Workflows (`tests/e2e/saansathi.spec.ts` — 4 Workflows)
+
+1. **Onboarding, Demo Mode & Offline Reload Persistence:** Verifies automatic first-launch `LocationModal`, Sample Demo banner toggle, custom locality addition, Household profile persistence, offline network reload, and live reconnection refresh.
+2. **Core Household & Community Planning Flows:** Exercises chart-to-accessible-table switching, Routine completion, Indoor source-control checklist, Severe-smog cycling conflict alert, Choices -> Impact math logging, and Community organizer checklist updates.
+3. **Mobile Navigation, Live Mocked Groq AI, Medical Redirect & Offline Fallback:** Runs at `390×844` mobile viewport, validates mocked `/api/chat` `200 OK` structured citations, verifies local urgent medical redirect (`112 / 108`), and confirms automatic deterministic offline fallback when unrouted offline.
+4. **Real-Browser Chromium `axe-core` WCAG 2.1 AA Contrast & Skip-Link Audit:** Verifies keyboard `Tab` focus on `Skip to main content`, injects `axe-core` into rendered Chromium pages, and confirms **zero violations** (including CSS `color-contrast` and `scrollable-region-focusable`) on Home and the amber-highlighted Ask Saansathi route.
+
+---
+
+## 6. Verification Commands
 
 ```bash
-npm run typecheck      # Strict TypeScript check across src/, api/, and tests/
-npm run lint           # Oxlint across all 105 TS/TSX files
-npm run format:check   # Prettier code style & Tailwind sorting verification
+npm run typecheck      # Strict tsc -b --noEmit across src/, api/, and tests/
+npm run lint           # Oxlint across 105 files (0 warnings, 0 errors)
+npm run format:check   # Prettier + Tailwind CSS formatting check
 npm run test           # 147 Vitest unit, integration, accessibility & hygiene tests
-npm run coverage       # V8 coverage report with enforced thresholds (src/ + api/)
-npm run build          # Production tsc -b + Vite + Workbox PWA build
-npm run e2e            # Build preview & run all 4 Playwright Chromium E2E workflows
-npm run check          # Full CI gate: typecheck && lint && format:check && test && build
+npm run coverage       # V8 coverage + threshold enforcement across src/ + api/
+npm run build          # Production tsc -b + Vite + Workbox PWA bundle
+npm run e2e            # Build preview & execute all 4 Playwright Chromium E2E workflows
+npm run check          # Combined CI verification gate
 ```
