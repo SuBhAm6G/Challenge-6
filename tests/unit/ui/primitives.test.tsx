@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { StatusBanner } from '../../../src/components/layout/StatusBanner.tsx';
+import { ErrorBoundary } from '../../../src/components/ui/ErrorBoundary.tsx';
 import {
   AccessibleModal,
   Badge,
@@ -9,7 +10,11 @@ import {
   SecondaryButton,
 } from '../../../src/components/ui/Primitives.tsx';
 
-describe('UI Primitives & StatusBanner', () => {
+function CrashingChild(): never {
+  throw new Error('Chunk load error');
+}
+
+describe('UI Primitives, StatusBanner & ErrorBoundary', () => {
   it('renders Card, Badge, PrimaryButton, and SecondaryButton with accessible labels', () => {
     const onPrimary = vi.fn();
     const onSecondary = vi.fn();
@@ -46,7 +51,7 @@ describe('UI Primitives & StatusBanner', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it('renders StatusBanner conditionally for offline, unavailable provider, and sample demo states', () => {
+  it('renders StatusBanner for offline, AQ errors, storage warnings, AI fallback, and sample demo states', () => {
     const { container, rerender } = render(
       <StatusBanner isOnline={true} aqStatus="ready" isDemoMode={false} />,
     );
@@ -55,10 +60,36 @@ describe('UI Primitives & StatusBanner', () => {
     rerender(<StatusBanner isOnline={false} aqStatus="unavailable" isDemoMode={false} />);
     expect(screen.getByText(/Offline mode:/i)).toBeInTheDocument();
 
-    rerender(<StatusBanner isOnline={true} aqStatus="unavailable" isDemoMode={false} />);
-    expect(screen.getByText(/Air-quality forecast provider unreachable/i)).toBeInTheDocument();
+    rerender(
+      <StatusBanner
+        isOnline={true}
+        aqStatus="rate_limited"
+        aqErrorMessage="Provider rate limit hit"
+        storageWarning="Storage quota full"
+        aiStatus="unavailable"
+        aiStatusDetail="Groq AI temporary outage"
+        isDemoMode={false}
+      />,
+    );
+    expect(screen.getByText(/Provider rate limit hit/i)).toBeInTheDocument();
+    expect(screen.getByText(/Storage notice: Storage quota full/i)).toBeInTheDocument();
+    expect(screen.getByText(/Assistant notice: Groq AI temporary outage/i)).toBeInTheDocument();
 
     rerender(<StatusBanner isOnline={true} aqStatus="ready" isDemoMode={true} />);
     expect(screen.getByText(/SAMPLE DEMO DATA ACTIVE/i)).toBeInTheDocument();
+  });
+
+  it('recovers gracefully inside ErrorBoundary when a lazy route crashes', () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const onResetRoute = vi.fn();
+    render(
+      <ErrorBoundary onResetRoute={onResetRoute}>
+        <CrashingChild />
+      </ErrorBoundary>,
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent(/This view could not be loaded/i);
+    fireEvent.click(screen.getByRole('button', { name: /Return to Home Dashboard/i }));
+    expect(onResetRoute).toHaveBeenCalledTimes(1);
+    consoleSpy.mockRestore();
   });
 });

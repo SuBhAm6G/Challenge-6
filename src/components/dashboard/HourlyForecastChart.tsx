@@ -8,7 +8,7 @@ export function HourlyForecastChart({ forecast }: { forecast: AirQualityForecast
 
   if (!forecast || forecast.hourly.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-[#D6CCBA] bg-[#FAF7F2] p-4 text-sm text-[#57534E]">
+      <div className="border-border-strong bg-canvas text-ink-muted rounded-xl border border-dashed p-4 text-sm">
         Hourly forecast data is currently unavailable. Refresh when online to view today’s timing
         outlook.
       </div>
@@ -24,11 +24,11 @@ export function HourlyForecastChart({ forecast }: { forecast: AirQualityForecast
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-xs font-medium text-[#57534E]">
+          <p className="text-ink-muted text-xs font-medium">
             Source: {forecast.sourceName} • {forecast.spatialResolutionNote}
           </p>
           {bestWindow && (
-            <p className="mt-1 text-sm font-semibold text-[#0F6E56]">
+            <p className="text-brand mt-1 text-sm font-semibold">
               Comparatively lower-AQI window:{' '}
               {formatHourRange(bestWindow.startHour, bestWindow.endHour)} (est. NAQI ~
               {bestWindow.averageEstimatedAqi}, {bestWindow.category})
@@ -39,7 +39,7 @@ export function HourlyForecastChart({ forecast }: { forecast: AirQualityForecast
           type="button"
           onClick={() => setShowTable((v) => !v)}
           aria-expanded={showTable}
-          className="min-h-[36px] rounded-lg border border-[#D6CCBA] bg-[#FAF7F2] px-3 py-1 text-xs font-semibold text-[#1C1917] hover:bg-[#EFE8DA]"
+          className="border-border-strong bg-canvas text-ink hover:bg-hover-warm min-h-[44px] rounded-lg border px-3 py-1.5 text-xs font-semibold"
         >
           {showTable ? 'Show visual chart' : 'View accessible data table'}
         </button>
@@ -48,9 +48,9 @@ export function HourlyForecastChart({ forecast }: { forecast: AirQualityForecast
       {!showTable ? (
         <figure
           aria-label={`Hourly India NAQI forecast chart for ${forecast.city} over the next ${next18Hours.length} hours`}
-          className="overflow-x-auto rounded-xl border border-[#E4DCCD] bg-[#FAF7F2] p-3"
+          className="border-border-warm bg-canvas rounded-xl border p-3"
         >
-          <div className="flex min-w-[520px] items-end gap-1.5" style={{ height: '148px' }}>
+          <div className="flex w-full min-w-0 items-end gap-1" style={{ height: '148px' }}>
             {next18Hours.map((pt) => {
               const val = pt.estimatedIndiaNaqi ?? 0;
               const pct = Math.max(8, Math.round((val / maxAqi) * 100));
@@ -62,7 +62,7 @@ export function HourlyForecastChart({ forecast }: { forecast: AirQualityForecast
 
               return (
                 <div key={pt.timestamp} className="flex flex-1 flex-col items-center gap-1">
-                  <span className="text-[10px] font-semibold text-[#44403C]">
+                  <span className="text-ink-body text-[10px] font-semibold">
                     {pt.estimatedIndiaNaqi ?? '–'}
                   </span>
                   <div className="flex h-24 w-full items-end">
@@ -75,25 +75,33 @@ export function HourlyForecastChart({ forecast }: { forecast: AirQualityForecast
                       title={`${label}: NAQI ${pt.estimatedIndiaNaqi ?? 'N/A'} (${pt.estimatedCategory ?? 'Unknown'})`}
                     />
                   </div>
-                  <span className="text-[10px] text-[#57534E]">{label}</span>
+                  <span className="text-ink-muted text-[10px]">{label}</span>
                 </div>
               );
             })}
           </div>
         </figure>
       ) : (
-        <div className="max-h-60 overflow-auto rounded-xl border border-[#E4DCCD]">
+        <div className="border-border-warm max-h-60 overflow-auto rounded-xl border">
           <table className="w-full text-left text-xs">
             <caption className="sr-only">Hourly air quality forecast for {forecast.city}</caption>
-            <thead className="bg-[#F3EDE2] text-[#1C1917]">
+            <thead className="bg-subtle text-ink">
               <tr>
-                <th className="px-3 py-2 font-semibold">Hour</th>
-                <th className="px-3 py-2 font-semibold">Est. NAQI</th>
-                <th className="px-3 py-2 font-semibold">Category</th>
-                <th className="px-3 py-2 font-semibold">PM2.5 (µg/m³)</th>
+                <th scope="col" className="px-3 py-2 font-semibold">
+                  Hour
+                </th>
+                <th scope="col" className="px-3 py-2 font-semibold">
+                  Est. NAQI
+                </th>
+                <th scope="col" className="px-3 py-2 font-semibold">
+                  Category
+                </th>
+                <th scope="col" className="px-3 py-2 font-semibold">
+                  PM2.5 (µg/m³)
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E4DCCD] bg-white">
+            <tbody className="divide-border-warm bg-surface divide-y">
               {next18Hours.map((pt) => {
                 const pm25 = pt.pollutants.find((p) => p.pollutant === 'pm25');
                 return (
@@ -115,7 +123,7 @@ export function HourlyForecastChart({ forecast }: { forecast: AirQualityForecast
         </div>
       )}
 
-      <p className="text-[11px] text-[#57534E]">
+      <p className="text-ink-muted text-[11px]">
         Model forecast caveat: Values reflect ~11 km atmospheric grid estimates, not direct
         street-level monitoring stations.
       </p>

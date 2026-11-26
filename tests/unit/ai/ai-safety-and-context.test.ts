@@ -161,7 +161,7 @@ describe('GenAI Privacy Context, Safety Rails & Fallback', () => {
     expect(sanitized.sourceIdsUsed).toEqual(['cpcb-naqi']);
   });
 
-  it('returns validated gemini_ai turn when server returns schema-compliant JSON', async () => {
+  it('returns validated groq_ai turn when server returns schema-compliant JSON', async () => {
     const { ctx, routine } = makeContext();
     const serverPayload: AiChatResponse = {
       summary:
@@ -195,7 +195,7 @@ describe('GenAI Privacy Context, Safety Rails & Fallback', () => {
       context: ctx,
       deterministicRoutine: routine,
     });
-    expect(turn.origin).toBe('gemini_ai');
+    expect(turn.origin).toBe('groq_ai');
     expect(turn.response.recommendations).toHaveLength(1);
     expect(turn.response.sourceIdsUsed).toContain('cpcb-naqi');
   });
@@ -240,5 +240,16 @@ describe('GenAI Privacy Context, Safety Rails & Fallback', () => {
     });
     expect(netErr.origin).toBe('deterministic_fallback');
     expect(netErr.response.recommendations.length).toBeGreaterThan(0);
+
+    // Caller AbortSignal cancellation
+    const controller = new AbortController();
+    controller.abort();
+    const aborted = await askSaansathiAssistant({
+      question: 'What should my family prioritize today?',
+      context: ctx,
+      deterministicRoutine: routine,
+      signal: controller.signal,
+    });
+    expect(aborted.origin).toBe('deterministic_fallback');
   });
 });

@@ -5,7 +5,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
     <section
-      className={`rounded-2xl border border-[#E4DCCD] bg-white p-4 shadow-[0_1px_3px_rgba(28,25,23,0.05)] sm:p-5 ${className}`}
+      className={`border-border-warm bg-surface rounded-2xl border p-4 shadow-[0_1px_3px_rgba(28,25,23,0.05)] sm:p-5 ${className}`}
     >
       {children}
     </section>
@@ -20,7 +20,7 @@ export function PrimaryButton({
   return (
     <button
       {...props}
-      className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#0F6E56] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0B5341] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`bg-brand hover:bg-brand-hover inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
     >
       {children}
     </button>
@@ -35,7 +35,7 @@ export function SecondaryButton({
   return (
     <button
       {...props}
-      className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-[#D6CCBA] bg-[#FAF7F2] px-4 py-2 text-sm font-medium text-[#1C1917] transition-colors hover:bg-[#EFE8DA] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`border-border-strong bg-canvas text-ink hover:bg-hover-warm inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
     >
       {children}
     </button>
@@ -44,7 +44,7 @@ export function SecondaryButton({
 
 export function Badge({
   children,
-  className = 'bg-[#F3EDE2] text-[#44403C] border-[#E4DCCD]',
+  className = 'bg-subtle text-ink-body border-border-warm',
 }: {
   children: ReactNode;
   className?: string;
@@ -75,11 +75,11 @@ export function AccessibleModal({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-stone-900/50 backdrop-blur-[1px]" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 z-50 max-h-[90vh] w-[94vw] max-w-xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-[#E4DCCD] bg-[#FAF7F2] p-5 shadow-xl sm:p-6">
-          <div className="flex items-start justify-between gap-3 border-b border-[#E4DCCD] pb-3">
+        <Dialog.Content className="border-border-warm bg-canvas fixed top-1/2 left-1/2 z-50 max-h-[90vh] w-[94vw] max-w-xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border p-5 shadow-xl sm:p-6">
+          <div className="border-border-warm flex items-start justify-between gap-3 border-b pb-3">
             <div>
-              <Dialog.Title className="text-lg font-bold text-[#1C1917]">{title}</Dialog.Title>
-              <Dialog.Description className="mt-1 text-sm text-[#57534E]">
+              <Dialog.Title className="text-ink text-lg font-bold">{title}</Dialog.Title>
+              <Dialog.Description className="text-ink-muted mt-1 text-sm">
                 {description}
               </Dialog.Description>
             </div>
@@ -87,7 +87,7 @@ export function AccessibleModal({
               <button
                 type="button"
                 aria-label="Close dialog"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#E4DCCD] bg-white text-[#1C1917] hover:bg-[#F3EDE2]"
+                className="border-border-warm bg-surface text-ink hover:bg-subtle inline-flex h-11 w-11 items-center justify-center rounded-xl border"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>

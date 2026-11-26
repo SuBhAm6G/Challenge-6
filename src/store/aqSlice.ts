@@ -28,6 +28,9 @@ export type AqSlice = Pick<
   | 'deleteLocationPreset'
 >;
 
+/**
+ * Zustand slice managing location presets, air-quality fetches, demo mode, and offline AQ cache.
+ */
 export const createAqSlice: StateCreator<AppStoreState, [], [], AqSlice> = (set, get) => ({
   locationPresets: [DEFAULT_DEMO_LOCATION],
   selectedLocationId: DEFAULT_DEMO_LOCATION.id,
@@ -130,11 +133,13 @@ export const createAqSlice: StateCreator<AppStoreState, [], [], AqSlice> = (set,
       ? list.map((p) => (p.id === preset.id ? preset : p))
       : [...list, preset];
     set({ locationPresets: next, selectedLocationId: preset.id, saveStatus: 'saving' });
-    await Promise.all([
+    const [presetsRes, selectedRes] = await Promise.all([
       LocalStorageRepo.saveLocationPresets(next),
       LocalStorageRepo.saveSelectedLocationId(preset.id),
     ]);
-    set({ saveStatus: 'saved' });
+    const ok = presetsRes.ok && selectedRes.ok;
+    const warning = presetsRes.message ?? selectedRes.message ?? null;
+    set({ saveStatus: ok ? 'saved' : 'error', storageWarning: ok ? null : warning });
     await get().refreshAirQuality(get().isDemoMode);
   },
 
@@ -147,11 +152,13 @@ export const createAqSlice: StateCreator<AppStoreState, [], [], AqSlice> = (set,
         ? (next[0]?.id ?? DEFAULT_DEMO_LOCATION.id)
         : get().selectedLocationId;
     set({ locationPresets: next, selectedLocationId: nextSel, saveStatus: 'saving' });
-    await Promise.all([
+    const [presetsRes, selectedRes] = await Promise.all([
       LocalStorageRepo.saveLocationPresets(next),
       LocalStorageRepo.saveSelectedLocationId(nextSel),
     ]);
-    set({ saveStatus: 'saved' });
+    const ok = presetsRes.ok && selectedRes.ok;
+    const warning = presetsRes.message ?? selectedRes.message ?? null;
+    set({ saveStatus: ok ? 'saved' : 'error', storageWarning: ok ? null : warning });
     await get().refreshAirQuality(get().isDemoMode);
   },
 });

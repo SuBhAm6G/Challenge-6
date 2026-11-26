@@ -8,5 +8,5 @@
     "typescript/no-explicit-any": "error",
     "no-console": ["error", { "allow": ["warn", "error"] }]
   },
-  "ignorePatterns": ["dist", "coverage", "node_modules", "tests/**"]
+  "ignorePatterns": ["dist", "coverage", "node_modules"]
 }

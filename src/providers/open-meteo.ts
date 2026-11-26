@@ -10,6 +10,9 @@ import { ProviderError, type AirQualityProvider, type ProviderFetchParams } from
 const OPEN_METEO_ENDPOINT = 'https://air-quality-api.open-meteo.com/v1/air-quality';
 const REQUEST_TIMEOUT_MS = 10000;
 
+/**
+ * Live atmospheric air-quality adapter backed by Open-Meteo's CAMS (~11 km) model forecast API.
+ */
 export class OpenMeteoAirQualityProvider implements AirQualityProvider {
   readonly id = 'open-meteo-aq';
   readonly name = 'Open-Meteo Air Quality (CAMS Model)';
@@ -54,7 +57,11 @@ export class OpenMeteoAirQualityProvider implements AirQualityProvider {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     if (params.signal) {
-      params.signal.addEventListener('abort', () => controller.abort(), { once: true });
+      if (params.signal.aborted) {
+        controller.abort();
+      } else {
+        params.signal.addEventListener('abort', () => controller.abort(), { once: true });
+      }
     }
 
     let response: Response;
@@ -93,7 +100,8 @@ export class OpenMeteoAirQualityProvider implements AirQualityProvider {
     let rawJson: unknown;
     try {
       rawJson = await response.json();
-    } catch {
+    } catch (parseErr) {
+      void parseErr;
       throw new ProviderError('invalid_response', this.id, 'Malformed JSON from air quality API.');
     }
 

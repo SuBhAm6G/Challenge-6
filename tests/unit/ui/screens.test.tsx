@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AssistantScreen } from '../../../src/components/assistant/AssistantScreen.tsx';
 import { ChoicesScreen } from '../../../src/components/choices/ChoicesScreen.tsx';
 import { CommunityScreen } from '../../../src/components/community/CommunityScreen.tsx';
@@ -41,11 +41,25 @@ describe('UI Screens & Accessible Visualizations', () => {
     });
   });
 
-  it('renders HomeScreen with India NAQI card, alerts, routine preview, and privacy strip', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
+
+  it('renders HomeScreen with India NAQI card, alerts, routine preview, navigation shortcuts, and privacy strip', () => {
     render(<HomeScreen />);
     expect(screen.getByText('India NAQI')).toBeInTheDocument();
     expect(screen.getByText(/Today’s Priority Actions/i)).toBeInTheDocument();
     expect(screen.getByText(/Privacy Guarantee/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Full Timeline/i }));
+    expect(useAppStore.getState().activeRoute).toBe('routine');
+    fireEvent.click(screen.getByRole('button', { name: /Open Indoor Air Toolkit/i }));
+    expect(useAppStore.getState().activeRoute).toBe('indoor');
+    fireEvent.click(screen.getByRole('button', { name: /View Impact/i }));
+    expect(useAppStore.getState().activeRoute).toBe('impact');
+    fireEvent.click(screen.getByRole('button', { name: /Ask AI/i }));
+    expect(useAppStore.getState().activeRoute).toBe('assistant');
   });
 
   it('toggles HourlyForecastChart between SVG visualization and accessible data table', () => {
@@ -61,7 +75,7 @@ describe('UI Screens & Accessible Visualizations', () => {
 
   it('allows toggling alerts and changing threshold category on HomeScreen', () => {
     render(<HomeScreen />);
-    const select = screen.getByLabelText(/Alert threshold category/i);
+    const select = screen.getByLabelText(/Alert threshold/i);
     fireEvent.change(select, { target: { value: 'Severe' } });
     expect(useAppStore.getState().alertPreferences.notifyOnCategoryAtOrAbove).toBe('Severe');
 
@@ -88,8 +102,8 @@ describe('UI Screens & Accessible Visualizations', () => {
       screen.getByRole('heading', { name: /My Household Daily Routine/i }),
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Accept' })[0]!);
-    fireEvent.click(screen.getAllByRole('button', { name: 'Complete' })[0]!);
+    fireEvent.click(screen.getAllByRole('button', { name: /^Accept:/i })[0]!);
+    fireEvent.click(screen.getAllByRole('button', { name: /^Complete:/i })[0]!);
 
     const altBtn = screen.getAllByRole('button', { name: /Alternative/i })[0];
     expect(altBtn).toBeDefined();
@@ -107,7 +121,7 @@ describe('UI Screens & Accessible Visualizations', () => {
 
     const checkOffBtn = screen.getAllByRole('button', { name: /Check off/i })[0]!;
     fireEvent.click(checkOffBtn);
-    expect(await screen.findByRole('button', { name: 'Checked' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /^Checked:/i })).toBeInTheDocument();
   });
 
   it('shows active exposure conflict warning in ChoicesScreen when selecting cycling during high AQI', () => {
@@ -146,6 +160,12 @@ describe('UI Screens & Accessible Visualizations', () => {
     fireEvent.change(screen.getByLabelText(/Responsible role/i), {
       target: { value: 'School Coordinator' },
     });
+    fireEvent.change(screen.getByLabelText(/Suggested deadline/i), {
+      target: { value: 'By Friday' },
+    });
+    fireEvent.change(screen.getByLabelText(/Why this helps/i), {
+      target: { value: 'Alerts parents at drop-off' },
+    });
     fireEvent.click(screen.getByRole('button', { name: /Add to Community Checklist/i }));
     expect(await screen.findByText('Install gate air sensor board')).toBeInTheDocument();
   });
@@ -173,7 +193,7 @@ describe('UI Screens & Accessible Visualizations', () => {
     fireEvent.click(screen.getByLabelText(/We have a HEPA air purifier/i));
     expect(useAppStore.getState().indoorProfile.hasAirPurifier).toBe(true);
 
-    fireEvent.click(screen.getByLabelText(/Mosquito Coils/i));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Mosquito Coils/i }));
     expect(useAppStore.getState().indoorProfile.burningSources).toContain('mosquito_coils');
   });
 
@@ -199,13 +219,102 @@ describe('UI Screens & Accessible Visualizations', () => {
 
   it('updates community workspace name and action status in CommunityScreen', () => {
     render(<CommunityScreen />);
-    fireEvent.change(screen.getByLabelText(/Community \/ School \/ Society name/i), {
+    const nameInput = screen.getByLabelText(/Community \/ School \/ Society name/i);
+    fireEvent.change(nameInput, {
       target: { value: 'Green Park RWA' },
     });
+    fireEvent.blur(nameInput);
     expect(useAppStore.getState().communityPlan.communityName).toBe('Green Park RWA');
 
     const firstStatusSelect = screen.getAllByLabelText(/Status for/i, { exact: false })[0]!;
     fireEvent.change(firstStatusSelect, { target: { value: 'in_progress' } });
     expect(useAppStore.getState().communityPlan.actions[0]?.status).toBe('in_progress');
+  });
+
+  it('renders validated groq_ai completion, safety warnings, and new-tab hints in AssistantScreen', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              summary: 'Shift workouts indoors and run an ozone generator if needed.',
+              recommendations: [
+                {
+                  id: 'rec-ai-1',
+                  action: 'Keep bedrooms sealed with HEPA filtration',
+                  timing: 'Morning & Night',
+                  reason: 'PM2.5 peaks overnight.',
+                  exposureConsideration: 'Lowers indoor exposure.',
+                  environmentalConsideration: 'Low fan wattage.',
+                  effort: 'low_effort',
+                  confidence: 'high',
+                  evidenceIds: ['cpcb-naqi'],
+                  caveats: ['Open windows briefly when cooking on gas.'],
+                },
+              ],
+              dataLimitations: ['Model estimate (~11 km)'],
+              sourceIdsUsed: ['cpcb-naqi'],
+              disclaimer: 'Environmental planning guidance only.',
+            }),
+            { status: 200 },
+          ),
+      ),
+    );
+
+    render(<AssistantScreen />);
+    const input = screen.getByLabelText(/Ask Saansathi a question/i);
+    fireEvent.change(input, { target: { value: '   ' } });
+    expect(screen.getByRole('button', { name: 'Ask' })).toBeDisabled();
+
+    fireEvent.change(input, { target: { value: 'How should we filter bedroom air?' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask' }));
+
+    expect(await screen.findByText(/AI-Assisted Explanation \(Validated\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Removed unsafe ozone-generator suggestion/i)).toBeInTheDocument();
+    expect(screen.getByText(/Keep bedrooms sealed with HEPA filtration/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/\(opens in new tab\)/i).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('copies community checklist summary to clipboard and handles debounced community name writes', async () => {
+    const writeText = vi.fn(async () => undefined);
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+
+    render(<CommunityScreen />);
+    fireEvent.click(screen.getByRole('button', { name: /Copy Shareable Checklist/i }));
+    expect(await screen.findByRole('button', { name: /Summary Copied/i })).toBeInTheDocument();
+    expect(writeText).toHaveBeenCalledTimes(1);
+
+    vi.useFakeTimers();
+    const nameInput = screen.getByLabelText(/Community \/ School \/ Society name/i);
+    fireEvent.change(nameInput, { target: { value: 'Vasant Kunj RWA' } });
+    // Debounced: immediate store value has not updated yet
+    expect(useAppStore.getState().communityPlan.communityName).not.toBe('Vasant Kunj RWA');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(350);
+    });
+    expect(useAppStore.getState().communityPlan.communityName).toBe('Vasant Kunj RWA');
+  });
+
+  it('navigates from ChoicesScreen to Impact via Inspect Impact Math', () => {
+    render(<ChoicesScreen />);
+    fireEvent.click(screen.getByRole('button', { name: /Inspect Impact Math/i }));
+    expect(useAppStore.getState().activeRoute).toBe('impact');
+  });
+
+  it('toggles HomeScreen Mark Done and RoutineScreen Dismiss with aria-pressed state', () => {
+    render(<HomeScreen />);
+    const markDoneBtns = screen.getAllByRole('button', { name: /^Mark Done:/i });
+    expect(markDoneBtns.length).toBeGreaterThanOrEqual(2);
+    fireEvent.click(markDoneBtns[0]!);
+    expect(screen.getAllByRole('button', { name: /^Completed:/i })[0]).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    render(<RoutineScreen />);
+    const dismissBtn = screen.getAllByRole('button', { name: /^Dismiss /i })[0]!;
+    fireEvent.click(dismissBtn);
+    expect(dismissBtn).toHaveAttribute('aria-pressed', 'true');
   });
 });

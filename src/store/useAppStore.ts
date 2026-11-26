@@ -22,6 +22,9 @@ export type {
   StorageSaveStatus,
 } from './types.ts';
 
+/**
+ * Global modular Zustand store combining air-quality state, planning persistence, and network status.
+ */
 export const useAppStore = create<AppStoreState>((set, get, api) => ({
   hydrated: false,
   activeRoute: 'home',
@@ -82,7 +85,13 @@ export const useAppStore = create<AppStoreState>((set, get, api) => ({
   },
 
   resetAllLocalData: async () => {
-    await LocalStorageRepo.clearAll();
+    const clearRes = await LocalStorageRepo.clearAll();
+    try {
+      window.localStorage.removeItem('saansathi_location_prompted');
+    } catch (err) {
+      // localStorage may be restricted in private browsing or test sandboxes
+      void err;
+    }
     set({
       locationPresets: [DEFAULT_DEMO_LOCATION],
       selectedLocationId: DEFAULT_DEMO_LOCATION.id,
@@ -93,8 +102,11 @@ export const useAppStore = create<AppStoreState>((set, get, api) => ({
       completedIndoorActionIds: [],
       impactHistory: [],
       communityPlan: DEFAULT_COMMUNITY_PLAN,
-      saveStatus: 'saved',
-      storageWarning: null,
+      saveStatus: clearRes.ok ? 'saved' : 'error',
+      storageWarning: clearRes.ok ? null : (clearRes.message ?? 'Unable to clear local storage.'),
+      aqErrorMessage: null,
+      aiStatus: 'ready',
+      aiStatusDetail: null,
     });
     await get().refreshAirQuality(false);
   },

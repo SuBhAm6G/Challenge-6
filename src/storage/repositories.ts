@@ -4,16 +4,15 @@ import type { HouseholdProfile, LocationPreset } from '../domain/household/types
 import type { CompletedImpactEntry } from '../domain/impact/types.ts';
 import type { IndoorProfile } from '../domain/indoor/types.ts';
 import type { RecommendationStatus } from '../domain/routine/types.ts';
+import { readCachedAirQuality, writeCachedAirQuality } from './aq-cache.ts';
 import {
   clearAllSaansathiStorage,
-  readCachedAirQuality,
   readValidatedRecord,
   StorageSchemas,
-  writeCachedAirQuality,
   writeValidatedRecord,
 } from './db.ts';
 
-export const STORAGE_KEYS = {
+const STORAGE_KEYS = {
   locationPresets: 'locationPresets',
   selectedLocationId: 'selectedLocationId',
   householdProfile: 'householdProfile',

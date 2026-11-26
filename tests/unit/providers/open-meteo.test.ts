@@ -125,6 +125,18 @@ describe('Open-Meteo Air Quality Provider & Sample Data', () => {
       .catch((e: unknown) => e);
     expect(err).toBeInstanceOf(ProviderError);
     expect((err as ProviderError).code).toBe('network');
+
+    const abortController = new AbortController();
+    abortController.abort();
+    const signalProvider = new OpenMeteoAirQualityProvider(async (_url, init) => {
+      if (init?.signal?.aborted) {
+        throw new DOMException('Aborted', 'AbortError');
+      }
+      return new Response('{}', { status: 200 });
+    });
+    await expect(
+      signalProvider.fetchCurrentAndForecast({ ...reqParams, signal: abortController.signal }),
+    ).rejects.toMatchObject({ code: 'timeout' });
   });
 
   it('generates explicitly labeled synthetic sample winter smog bundle with valid NAQI profile', () => {

@@ -1,4 +1,5 @@
 import type { StateCreator } from 'zustand';
+import type { StorageResult } from '../storage/db.ts';
 import { LocalStorageRepo } from '../storage/repositories.ts';
 import {
   DEFAULT_ALERT_PREFERENCES,
@@ -7,6 +8,15 @@ import {
   DEFAULT_INDOOR_PROFILE,
 } from './defaults.ts';
 import type { AppStoreState } from './types.ts';
+
+function persistStatePatch(
+  res: StorageResult<unknown>,
+): Pick<AppStoreState, 'saveStatus' | 'storageWarning'> {
+  return {
+    saveStatus: res.ok ? 'saved' : 'error',
+    storageWarning: res.message ?? null,
+  };
+}
 
 export type PlanningSlice = Pick<
   AppStoreState,
@@ -28,6 +38,10 @@ export type PlanningSlice = Pick<
   | 'addCommunityAction'
 >;
 
+/**
+ * Zustand slice managing household context, indoor setup, alerts, routine progress,
+ * impact history, and community organizer persistence.
+ */
 export const createPlanningSlice: StateCreator<AppStoreState, [], [], PlanningSlice> = (
   set,
   get,
@@ -43,50 +57,43 @@ export const createPlanningSlice: StateCreator<AppStoreState, [], [], PlanningSl
   updateHouseholdProfile: async (profile) => {
     const stamped = { ...profile, updatedAt: new Date().toISOString() };
     set({ householdProfile: stamped, saveStatus: 'saving' });
-    const res = await LocalStorageRepo.saveHouseholdProfile(stamped);
-    set({ saveStatus: res.ok ? 'saved' : 'error', storageWarning: res.message ?? null });
+    set(persistStatePatch(await LocalStorageRepo.saveHouseholdProfile(stamped)));
   },
 
   updateIndoorProfile: async (profile) => {
     const stamped = { ...profile, updatedAt: new Date().toISOString() };
     set({ indoorProfile: stamped, saveStatus: 'saving' });
-    const res = await LocalStorageRepo.saveIndoorProfile(stamped);
-    set({ saveStatus: res.ok ? 'saved' : 'error', storageWarning: res.message ?? null });
+    set(persistStatePatch(await LocalStorageRepo.saveIndoorProfile(stamped)));
   },
 
   updateAlertPreferences: async (prefs) => {
     set({ alertPreferences: prefs, saveStatus: 'saving' });
-    const res = await LocalStorageRepo.saveAlertPreferences(prefs);
-    set({ saveStatus: res.ok ? 'saved' : 'error', storageWarning: res.message ?? null });
+    set(persistStatePatch(await LocalStorageRepo.saveAlertPreferences(prefs)));
   },
 
   setRoutineStatus: async (recId, status) => {
     const next = { ...get().routineStatuses, [recId]: status };
     set({ routineStatuses: next, saveStatus: 'saving' });
-    const res = await LocalStorageRepo.saveRoutineStatuses(next);
-    set({ saveStatus: res.ok ? 'saved' : 'error', storageWarning: res.message ?? null });
+    set(persistStatePatch(await LocalStorageRepo.saveRoutineStatuses(next)));
   },
 
   toggleIndoorAction: async (actionId) => {
     const curr = get().completedIndoorActionIds;
     const next = curr.includes(actionId) ? curr.filter((x) => x !== actionId) : [...curr, actionId];
     set({ completedIndoorActionIds: next, saveStatus: 'saving' });
-    const res = await LocalStorageRepo.saveCompletedIndoorActionIds(next);
-    set({ saveStatus: res.ok ? 'saved' : 'error', storageWarning: res.message ?? null });
+    set(persistStatePatch(await LocalStorageRepo.saveCompletedIndoorActionIds(next)));
   },
 
   recordImpactEntry: async (entry) => {
     const next = [entry, ...get().impactHistory].slice(0, 100);
     set({ impactHistory: next, saveStatus: 'saving' });
-    const res = await LocalStorageRepo.saveImpactHistory(next);
-    set({ saveStatus: res.ok ? 'saved' : 'error', storageWarning: res.message ?? null });
+    set(persistStatePatch(await LocalStorageRepo.saveImpactHistory(next)));
   },
 
   updateCommunityPlan: async (plan) => {
     const stamped = { ...plan, updatedAt: new Date().toISOString() };
     set({ communityPlan: stamped, saveStatus: 'saving' });
-    const res = await LocalStorageRepo.saveCommunityPlan(stamped);
-    set({ saveStatus: res.ok ? 'saved' : 'error', storageWarning: res.message ?? null });
+    set(persistStatePatch(await LocalStorageRepo.saveCommunityPlan(stamped)));
   },
 
   updateCommunityActionStatus: async (actionId, status) => {

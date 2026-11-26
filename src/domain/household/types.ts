@@ -77,15 +77,23 @@ export type ScheduleSlot = z.infer<typeof ScheduleSlotSchema>;
 export const BudgetLevelSchema = z.enum(['zero_cost', 'low', 'moderate', 'flexible']);
 export type BudgetLevel = z.infer<typeof BudgetLevelSchema>;
 
+export const WorkPatternSchema = z.enum(['office', 'hybrid', 'remote', 'outdoor_work', 'shift']);
+export const ExerciseHabitSchema = z.enum([
+  'none',
+  'morning_walk_run',
+  'evening_walk_run',
+  'flexible',
+]);
+
 export const HouseholdProfileSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1).max(60),
   memberCount: z.number().int().min(1).max(20),
   primaryCommuteMode: TransportModeSchema,
   commuteDistanceKmOneWay: z.number().min(0).max(200),
-  workPattern: z.enum(['office', 'hybrid', 'remote', 'outdoor_work', 'shift']),
+  workPattern: WorkPatternSchema,
   hasSchoolGoingChildren: z.boolean(),
-  outdoorExerciseHabit: z.enum(['none', 'morning_walk_run', 'evening_walk_run', 'flexible']),
+  outdoorExerciseHabit: ExerciseHabitSchema,
   protectionFlags: z.array(VulnerabilityFlagSchema),
   budget: BudgetLevelSchema,
   preferredLanguage: z.enum(['en', 'hi']),

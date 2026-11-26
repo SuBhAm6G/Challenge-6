@@ -90,7 +90,11 @@ describe('Automated Repository Hygiene', () => {
       expect(content, `${rel} contains @ts-ignore`).not.toContain('@ts-ignore');
       expect(content, `${rel} contains @ts-nocheck`).not.toContain('@ts-nocheck');
       expect(content, `${rel} contains lint disable`).not.toMatch(/eslint-disable|oxlint-disable/);
-      expect(lines, `${rel} exceeded 250 lines (${lines})`).toBeLessThanOrEqual(250);
+      expect(lines, `${rel} exceeded 200 lines (${lines})`).toBeLessThanOrEqual(200);
+      expect(content.toLowerCase(), `${rel} contains stale gemini reference`).not.toContain(
+        'gemini',
+      );
+      expect(content, `${rel} contains leftover @google/genai`).not.toContain('@google/genai');
 
       if (file.startsWith(join(ROOT, 'src'))) {
         expect(content, `${rel} contains client console logging`).not.toMatch(

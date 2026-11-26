@@ -2,107 +2,125 @@
 
 **Make everyday choices for cleaner air.**
 
+[![Live Production App](https://img.shields.io/badge/Live%20Demo-saansathi.vercel.app-0F6E56?style=flat-square&logo=vercel&logoColor=white)](https://saansathi.vercel.app/)
 [![Node Version](https://img.shields.io/badge/node-%3E%3D20.0.0-0F6E56?style=flat-square&logo=node.js&logoColor=white)](package.json)
-[![TypeScript Strict](https://img.shields.io/badge/TypeScript-Strict%20Zero--Any-3178C6?style=flat-square&logo=typescript&logoColor=white)](tsconfig.app.json)
-[![Vitest Suite](https://img.shields.io/badge/Vitest-130%20Tests%20Passing-6E9F18?style=flat-square&logo=vitest&logoColor=white)](docs/TESTING.md)
-[![Code Coverage](<https://img.shields.io/badge/Lines%20Coverage-88.9%25%20(Engines%2096.2%25)-0F6E56?style=flat-square>)](docs/TESTING.md)
-[![Playwright E2E](https://img.shields.io/badge/Playwright%20E2E-3%20Workflows%20Passing-2EAD33?style=flat-square&logo=playwright&logoColor=white)](tests/e2e/saansathi.spec.ts)
-[![Accessibility](https://img.shields.io/badge/WCAG%202.1%20AA-axe--core%20Clean-B45309?style=flat-square)](docs/ACCESSIBILITY.md)
-[![GenAI Model](https://img.shields.io/badge/GenAI-Groq%20%28gpt--oss--120b%29-F55036?style=flat-square)](api/chat.ts)
+[![TypeScript Strict](<https://img.shields.io/badge/TypeScript-Strict%20Zero--Any%20(src%2Bapi%2Btests)-3178C6?style=flat-square&logo=typescript&logoColor=white>)](tsconfig.json)
+[![Oxlint](https://img.shields.io/badge/Oxlint-0%20Warnings%20%7C%20105%20Files-181717?style=flat-square)](.oxlintrc.json)
+[![Vitest Suite](https://img.shields.io/badge/Vitest-147%20Tests%20Passing-6E9F18?style=flat-square&logo=vitest&logoColor=white)](docs/TESTING.md)
+[![V8 Code Coverage](https://img.shields.io/badge/Coverage-93.4%25%20Stmts%20%7C%2095.5%25%20Lines-0F6E56?style=flat-square)](vitest.config.ts)
+[![Playwright E2E](https://img.shields.io/badge/Playwright%20E2E-4%20Workflows%20Passing-2EAD33?style=flat-square&logo=playwright&logoColor=white)](tests/e2e/saansathi.spec.ts)
+[![Accessibility](https://img.shields.io/badge/WCAG%202.1%20AA-axe--core%200%20Violations-B45309?style=flat-square)](docs/ACCESSIBILITY.md)
+[![GenAI Model](<https://img.shields.io/badge/GenAI-Groq%20(gpt--oss--120b%20%2B%20Fallback)-F55036?style=flat-square>)](api/chat.ts)
 [![PWA Offline](https://img.shields.io/badge/PWA-Workbox%20%2B%20IndexedDB-5A0FC8?style=flat-square)](docs/OFFLINE_SUPPORT.md)
 
-> **Saansathi** is a local-first, context-aware urban air-quality planning assistant engineered for Indian households and communities navigating severe winter smog and everyday urban air pollution. Rather than stopping at an AQI gauge or attaching an ungrounded chatbot, Saansathi unifies **real atmospheric forecast data**, **CPCB India NAQI breakpoints**, **pure deterministic decision engines**, **IndexedDB offline persistence**, and **schema-gated Groq AI synthesis (`openai/gpt-oss-120b` with automatic multi-model fallback)** into an end-to-end daily decision-support system.
+> **Saansathi** is a **local-first, offline-capable Progressive Web App (PWA)** and **context-aware environmental decision engine** built for Indian households and housing-society communities navigating severe winter smog and everyday urban air pollution. Rather than stopping at a passive AQI dial or wrapping an ungrounded chatbot, Saansathi unifies **live Open-Meteo Copernicus CAMS atmospheric forecasts**, **official CPCB India NAQI mathematical breakpoints**, **10 pure deterministic TypeScript engines**, **Zod-validated IndexedDB persistence**, **WCAG 2.1 AA accessible UI**, and **schema-gated Groq AI synthesis (`openai/gpt-oss-120b` with multi-model fallback)** inside a clean **Functional Core / Imperative Shell** architecture.
 
 ---
 
-## Executive Overview: Why Saansathi Is Different
+## Table of Contents
 
-Most urban air-quality products suffer from two failure modes:
+1. [Executive Summary: Eliminating AQI Dashboard & LLM Failure Modes](#executive-summary-eliminating-aqi-dashboard--llm-failure-modes)
+2. [Evaluation Criteria Mapping Matrix](#evaluation-criteria-mapping-matrix)
+3. [How Saansathi Solves Every Challenge 6 Requirement](#how-saansathi-solves-every-challenge-6-requirement)
+4. [System Architecture & Visual Diagrams (Mermaid)](#system-architecture--visual-diagrams-mermaid)
+5. [Domain Engineering & Scientific Mathematics](#domain-engineering--scientific-mathematics)
+6. [Defensive Engineering & Failure-Mode Matrix](#defensive-engineering--failure-mode-matrix)
+7. [Design Patterns, Type Safety & Algorithmic Complexity Proofs](#design-patterns-type-safety--algorithmic-complexity-proofs)
+8. [Serverless GenAI Endpoint Specification (`/api/chat`)](#serverless-genai-endpoint-specification-apichat)
+9. [Accessibility Architecture (WCAG 2.1 AA + Real-Browser `axe-core`)](#accessibility-architecture-wcag-21-aa--real-browser-axe-core)
+10. [Production Bundle Footprint, Coverage & Automated Verification](#production-bundle-footprint-coverage--automated-verification)
+11. [Repository Structure & Modularity Budget (`<= 200` Lines)](#repository-structure--modularity-budget--200-lines)
+12. [Frequently Asked Questions (FAQ) & Technical Documentation Index](#frequently-asked-questions-faq--technical-documentation-index)
 
-1. **Passive Dashboards:** They display a raw number (`AQI 342`) without helping a family decide _what to change at 6:30 AM_, _whether to open kitchen windows_, _which commute avoids both smog inhalation and unnecessary fuel burn_, or _what a housing society can execute this week_.
-2. **Ungrounded LLM Wrappers:** They delegate numeric calculations, safety decisions, or fake citywide impact promises directly to a generative model, producing hallucinated AQI numbers, dangerous indoor sealing advice near gas stoves, or contradictory recommendations (such as telling people to cycle 15 km through `Severe` 420 NAQI smog).
+---
 
-Saansathi eliminates both failure modes via a strict **Deterministic Core + AI Shell** architecture governed by an eight-stage intelligence loop:
+## Executive Summary: Eliminating AQI Dashboard & LLM Failure Modes
+
+Conventional urban air-quality applications suffer from two systemic engineering flaws:
+
+1. **Passive Number Displays:** Showing `"AQI 376"` fails to answer practical household questions: _Should morning runners move indoors at 6:30 AM? When is the safest 2-hour daytime ventilation dip? Must LPG kitchen exhaust fans stay on even when windows are closed? Which commute shift cuts emissions without increasing rider particulate inhalation?_
+2. **Ungrounded LLM Wrappers:** Delegating numeric breakpoints, emission calculations, or medical guidance directly to generative AI causes hallucinated station numbers, unsafe advice (such as recommending ozone air cleaners or sealing kitchens with active gas stoves), and contradictory recommendations (telling commuters to bicycle 15 km through `Severe` 420 NAQI winter smog).
+
+Saansathi solves both failure modes through a deterministic **Eight-Stage Clean-Air Intelligence Loop** paired with a **Dual-Interface Principle** (100% deterministic GUI parity + schema-gated Groq AI explanation shell):
 
 $$\textbf{LOCATE} \longrightarrow \textbf{ASSESS} \longrightarrow \textbf{UNDERSTAND} \longrightarrow \textbf{PERSONALIZE} \longrightarrow \textbf{PLAN} \longrightarrow \textbf{ACT} \longrightarrow \textbf{MEASURE} \longrightarrow \textbf{ADAPT}$$
 
-| Capability Dimension       | Conventional AQI App                             | Generic LLM Chatbot                                     | **Saansathi Architecture**                                                                                                  |
-| :------------------------- | :----------------------------------------------- | :------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------- |
-| **Scale & Provenance**     | Often substitutes US EPA scale for Indian cities | Hallucinates station numbers or outdated advice         | **Exact CPCB India NAQI** (`src/data/aqi-standards.ts`) with explicit 3-pollutant coverage & model-grid disclosure          |
-| **Exposure vs. Emissions** | Ignores choices completely                       | Conflates carbon savings with personal health risk      | **Strictly separated engines & UI cards**; blocks active cycling recommendations when NAQI > 200                            |
-| **Indoor Air Guidance**    | Static generic blog list                         | May hallucinate ozone generators or unsafe room sealing | **Combustion-safe deterministic toolkit** (`src/engines/indoor-engine.ts`) with CADR math & hard myth/ozone bans            |
-| **Offline Resilience**     | Blank error screen offline                       | 100% broken without API connectivity                    | **Workbox PWA + IndexedDB + Deterministic Offline Fallback** across all 7 screens                                           |
-| **Privacy Boundaries**     | Sends GPS tracks to ad/analytics SDKs            | Sends full user prompt history to external endpoints    | **City-level context minimization** (`src/ai/context-builder.ts`); household profiles & health flags never leave the device |
-| **Verification Rigor**     | Minimal manual smoke checks                      | Untested prompt strings                                 | **130 Vitest tests + 3 Playwright E2E flows + `axe-core` audit + automated <=250-line hygiene gate**                        |
+| Engineering Dimension           | Conventional AQI App                        | Unbounded LLM Chatbot                                | **Saansathi Architecture**                                                                                                             |
+| :------------------------------ | :------------------------------------------ | :--------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
+| **Scale & Provenance**          | Silently substitutes US EPA or EAQI numbers | Invents station readings or outdated ranges          | **Exact CPCB India NAQI** (`src/engines/aqi-interpreter.ts`) with CO $\mu\text{g}\to\text{mg}$ conversion & 3-pollutant coverage rule  |
+| **Exposure vs. Emissions**      | Ignores daily routine trade-offs            | Conflates carbon reductions with health safety       | **Strictly decoupled engines & UI tracks**; explicitly warns against active cycling when NAQI $> 200$                                  |
+| **Indoor Air Safety**           | Generic blog tips                           | May hallucinate ozone generators or airtight sealing | **Combustion-safe deterministic toolkit** (`src/engines/indoor-engine.ts`) with CADR room math & hard ozone/myth bans                  |
+| **Resilience & Offline Mode**   | Blank error page offline                    | Broken when API key or network is unavailable        | **Workbox PWA + Zod-validated IndexedDB + `ErrorBoundary` + Deterministic Offline Assistant Fallback**                                 |
+| **Privacy & Data Minimization** | Uploads precise GPS & analytics             | Sends raw personal context in prompts                | **City-level context minimization** (`src/ai/context-builder.ts`); household names, coordinates & health flags stay local              |
+| **Verification Rigor**          | Minimal smoke tests                         | Untested prompt strings                              | **147 Vitest tests + enforced V8 thresholds (`93.4%` stmts / `95.5%` lines) + 4 Playwright E2E + Chromium `axe-core` contrast checks** |
 
 ---
 
 ## Evaluation Criteria Mapping Matrix
 
-Every architectural choice in Saansathi is structured around measurable engineering evidence:
+Every evaluation dimension maps directly to verifiable source modules, design patterns, and automated CI checks:
 
-| Evaluation Dimension  | Target | Primary Architectural Proof                                                                                                                                          | Verifying Files & Automated Checks                                                                               |
-| :-------------------- | :----: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
-| **Problem Alignment** |  100   | Complete Challenge 6 keyword parity, India NAQI first, strict exposure-vs-emission separation, zero vaporware or fake data                                           | `src/engines/*`, `src/components/*`, `tests/integration/end-to-end-pipeline.test.ts`                             |
-| **Code Quality**      |  100   | TypeScript `strict` + `noUncheckedIndexedAccess`, zero `any`/`@ts-ignore`, modular Zustand slices, every `src/` & `api/` file $\le 250$ lines                        | `tsconfig.app.json`, `src/store/*`, `.oxlintrc.json`, `tests/quality/hygiene.test.ts`                            |
-| **Efficiency**        |  100   | Zero-dependency custom SVG/HTML hourly chart, route-level `React.lazy` code splitting, $O(n)$ pure engines, pre-indexed $O(1)$ `Map` lookups                         | `src/App.tsx`, `src/components/dashboard/HourlyForecastChart.tsx`, `vite.config.ts`                              |
-| **Testing**           |  100   | **130 Vitest tests** (engines, domain Zod bounds, provider adapters, IndexedDB, store slices, AI guardrails, screens, modals, pipeline) + **3 Playwright E2E flows** | `tests/unit/**`, `tests/integration/**`, `tests/quality/**`, `tests/e2e/saansathi.spec.ts`                       |
-| **Security**          |  100   | Server-only `GROQ_API_KEY`, 20 req/min rate limit, 8 KB body cap, Zod request/response gating, prompt-injection delimiters, strict CSP headers in `vercel.json`      | `api/chat.ts`, `api/_guardrails.ts`, `src/ai/safety.ts`, `vercel.json`, `tests/unit/ai/server-endpoint.test.ts`  |
-| **Accessibility**     |  100   | Semantic landmarks, skip link, text+color NAQI badges, keyboard-first Radix dialogs, SVG chart $\leftrightarrow$ accessible `<table>` toggle, `axe-core` verified    | `src/components/layout/AppShell.tsx`, `src/components/ui/Primitives.tsx`, `tests/unit/ui/accessibility.test.tsx` |
-
----
-
-## How This Solves the Challenge Problem Statement
-
-Verbatim alignment between every Challenge 6 requirement, persona, and the implemented production module:
-
-| Challenge Requirement / Persona             | Implemented Product Capability                                                                                                                                              | Primary Code Evidence                                                                                               | Automated Verification                                                                         |
-| :------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------- |
-| **GenAI-powered assistant**                 | Context-grounded **Ask Saansathi** backed by Groq AI structured JSON output (`api/chat.ts`) with automatic multi-model fallback, urgent medical redirect & offline fallback | `api/chat.ts`, `src/ai/client.ts`, `src/ai/safety.ts`, `src/components/assistant/AssistantScreen.tsx`               | `tests/unit/ai/ai-safety-and-context.test.ts`, `tests/unit/ai/server-endpoint.test.ts`         |
-| **Urban Families (Persona A)**              | Household member count, school-going child flag, exercise habit, budget level, and daily routine slots persisted in IndexedDB                                               | `src/domain/household/types.ts`, `src/components/dashboard/HouseholdModal.tsx`                                      | `tests/unit/ui/modals.test.tsx`, `tests/e2e/saansathi.spec.ts`                                 |
-| **Health-Conscious Households (Persona B)** | Voluntary local priority-protection toggles (children, older adults, pregnancy, sensitive comfort) that tighten Moderate AQI thresholds without collecting medical records  | `src/engines/routine-rules.ts`, `src/components/dashboard/HouseholdModal.tsx`                                       | `tests/unit/engines/routine-engine.test.ts`                                                    |
-| **Daily Commuters (Persona C)**             | Mode comparison across 12 Indian transport modes (`car_petrol` through `remote`), weekly shift impact calculator, and Severe-AQI cycling exposure warning                   | `src/data/emission-factors.ts`, `src/engines/impact-engine.ts`, `src/components/choices/ChoicesScreen.tsx`          | `tests/unit/engines/impact-engine.test.ts`, `tests/unit/ui/screens.test.tsx`                   |
-| **Communities (Persona D)**                 | Editable RWA / school / society clean-air organizer checklist with lead roles, deadlines, status tracking, and privacy-safe clipboard summary export                        | `src/data/community-templates.ts`, `src/components/community/CommunityScreen.tsx`                                   | `tests/unit/ui/screens.test.tsx`, `tests/e2e/saansathi.spec.ts`                                |
-| **Location**                                | 15 preset Indian cities with regional winter-smog context, custom locality tagging, and consent-first ~1 km rounded browser geolocation                                     | `src/data/cities.ts`, `src/components/dashboard/LocationModal.tsx`                                                  | `tests/unit/data/registries.test.ts`, `tests/e2e/saansathi.spec.ts`                            |
-| **Severe winter smog**                      | Official CPCB India NAQI sub-index calculation, hourly diurnal outlook visualization, forecast spike alert detection, and evening inversion guidance                        | `src/engines/aqi-interpreter.ts`, `src/engines/alert-engine.ts`, `src/components/dashboard/HourlyForecastChart.tsx` | `tests/unit/engines/aqi-interpreter.test.ts`, `tests/unit/engines/alert-and-freshness.test.ts` |
-| **Low-emission daily routines**             | Deterministic timeline covering morning exercise, commute shift / outdoor-work pacing, school pickup, errand batching, and evening wind-down                                | `src/engines/routine-engine.ts`, `src/engines/routine-rules.ts`, `src/components/routine/RoutineScreen.tsx`         | `tests/unit/engines/routine-engine.test.ts`, `tests/unit/ui/screens.test.tsx`                  |
-| **Indoor air quality hacks**                | Ventilation window advisor paired with LPG/PNG/biomass combustion warnings, source control checklist, CADR sizing math, and explicit ozone/myth ban                         | `src/engines/indoor-engine.ts`, `src/data/indoor-actions.ts`, `src/components/indoor/IndoorScreen.tsx`              | `tests/unit/engines/indoor-engine.test.ts`, `tests/unit/ui/screens.test.tsx`                   |
-| **Direct impact of choices**                | Separate **Personal Exposure Management** summary vs. **Illustrative Avoided Emissions** calculator with "How we calculated this" formulas, assumptions, and limits         | `src/engines/impact-engine.ts`, `src/components/impact/ImpactScreen.tsx`                                            | `tests/unit/engines/impact-engine.test.ts`, `tests/integration/end-to-end-pipeline.test.ts`    |
-| **Deterministic GUI fallbacks**             | Every AI explanation capability corresponds to direct deterministic UI controls and works 100% without `GROQ_API_KEY` or internet access                                    | `src/store/useAppStore.ts`, `src/ai/client.ts`                                                                      | `tests/e2e/saansathi.spec.ts`                                                                  |
+| Dimension                       | Architectural Evidence                                                                                                                                                                                                                                                       | Verifying Files & Automated Checks                                                                                                              | Measured Proof                                                                      |
+| :------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------- |
+| **Problem Statement Alignment** | Complete Challenge 6 persona parity (Families, Health-Conscious, Commuters, Communities), CPCB NAQI first, exposure-vs-emission separation, zero vaporware                                                                                                                   | `src/engines/*`, `src/components/*`, `tests/integration/end-to-end-pipeline.test.ts`                                                            | **7/7 routes** + full deterministic GUI fallback                                    |
+| **Code Quality**                | TypeScript `strict` + `noUncheckedIndexedAccess` across `src/`, `api/`, and `tests/`; zero `any`, zero `!`, zero unvalidated `<select>` casts; `useShallow` selectors; modular Zustand slices; every `src/` & `api/` file `<= 200` lines; Tailwind v4 `@theme` design tokens | `tsconfig.json`, `tsconfig.test.json`, `src/store/*`, `src/domain/select-guards.ts`, `.oxlintrc.json`, `tests/quality/hygiene.test.ts`          | **0 TS errors · 0 Oxlint warnings** (`105` files) · **100% modules `<= 200` lines** |
+| **Efficiency**                  | Zero-dependency responsive HTML/CSS hourly chart, `React.lazy()` route code splitting, `useShallow` store selectors, 300 ms debounced IndexedDB writes, $O(1)$ pre-indexed `ReadonlyMap`/`Set` lookups                                                                       | `src/App.tsx`, `src/components/dashboard/HourlyForecastChart.tsx`, `src/components/community/CommunityScreen.tsx`, `vite.config.ts`             | **105.7 kB** gzipped main chunk · **669 ms** Vite build                             |
+| **Testing**                     | 147 Vitest tests (deterministic engines, Zod domain contracts, Open-Meteo adapter, IndexedDB quarantine, Zustand concurrency, `/api/chat` fallback & rate-limit, screens, modals, onboarding, `ErrorBoundary`, `axe-core`) + 4 Playwright Chromium E2E workflows             | `vitest.config.ts`, `tests/unit/**`, `tests/integration/**`, `tests/quality/**`, `tests/e2e/saansathi.spec.ts`                                  | **147 / 147 Vitest (`93.38%` stmts, `95.46%` lines)** · **4 / 4 Playwright**        |
+| **Security**                    | Server-only `GROQ_API_KEY`, 20 req/min rate limit, 8 KB body cap, single-source Zod request/response gating, delimited prompt boundaries, urgent `112/108` redirect, strict CSP & HSTS headers                                                                               | `api/chat.ts`, `api/_guardrails.ts`, `src/ai/safety.ts`, `vercel.json`, `tests/unit/ai/server-endpoint.test.ts`                                 | **Zero client secrets** · verified in unit + CI tests                               |
+| **Accessibility**               | WCAG 2.1 AA landmarks, keyboard skip link, `>= 44×44 px` touch targets, `scope="col"` + `<caption>` tables, `aria-pressed` stateful toggles, cross-viewport `<output aria-live="polite">`, SVG-to-table toggle, real-Chromium `axe-core` contrast verification               | `src/components/layout/AppShell.tsx`, `src/components/ui/Primitives.tsx`, `tests/unit/ui/accessibility.test.tsx`, `tests/e2e/saansathi.spec.ts` | **0 `axe-core` violations** (unit all-routes + Playwright Chromium CSS contrast)    |
 
 ---
 
-## System Architecture & Visual Flows
+## How Saansathi Solves Every Challenge 6 Requirement
 
-### 1. High-Level Core / Shell Architecture
+Verbatim traceability between every Challenge 6 problem statement keyword, target user persona, and production implementation:
 
-Saansathi enforces a clean **Functional Core / Imperative Shell** separation. All environmental calculations run synchronously in pure browser TypeScript modules with zero network or LLM dependencies.
+| Challenge Requirement / Persona             | Implemented Capability                                                                                                                                                                                                    | Primary Source Modules                                                                                    | Automated Tests                                                     |
+| :------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------ |
+| **GenAI-powered assistant**                 | Context-grounded **Ask Saansathi** backed by Groq structured JSON inference (`api/chat.ts`) with 3-model cascade (`gpt-oss-120b -> gpt-oss-20b -> qwen3.8-27b`), urgent medical redirect & offline deterministic fallback | `api/chat.ts`, `api/_guardrails.ts`, `src/ai/client.ts`, `src/ai/safety.ts`, `src/components/assistant/*` | `server-endpoint.test.ts` (10), `ai-safety-and-context.test.ts` (7) |
+| **Urban Families (Persona A)**              | First-launch location onboarding modal, household size, school-going child flag, exercise timing, budget tier, and full daily routine slots stored locally in IndexedDB                                                   | `src/App.tsx`, `src/domain/household/types.ts`, `src/components/dashboard/HouseholdModal.tsx`             | `modals.test.tsx` (5), `app-shell.test.tsx` (2)                     |
+| **Health-Conscious Households (Persona B)** | Local-only voluntary priority protection toggles (`children`, `older_adults`, `pregnant`, `respiratory_or_heart`) tightening Moderate AQI thresholds (`> 100`) without storing medical records                            | `src/engines/routine-rules.ts`, `src/components/dashboard/HouseholdFormFields.tsx`                        | `routine-engine.test.ts` (9)                                        |
+| **Daily Commuters (Persona C)**             | Mode explorer across 12 Indian transport modes (`car_petrol` through `remote`), weekly CO₂e calculator, and explicit `> 200` NAQI cycling/walking conflict alerts                                                         | `src/data/emission-factors.ts`, `src/engines/impact-engine.ts`, `src/components/choices/*`                | `impact-engine.test.ts` (9), `screens.test.tsx` (19)                |
+| **Communities (Persona D)**                 | Debounced RWA / school / society clean-air organizer checklist with lead roles, deadlines, status updates, and privacy-safe clipboard summary export                                                                      | `src/data/community-templates.ts`, `src/components/community/*`                                           | `screens.test.tsx`, `saansathi.spec.ts`                             |
+| **Location Intelligence**                   | 15 preset Indian cities with winter-smog advisories, custom locality labels, and opt-in consent-first geolocation rounded to `~1 km` (`0.01°`)                                                                            | `src/data/cities.ts`, `src/components/dashboard/LocationModal.tsx`, `GeoConsentPanel.tsx`                 | `registries.test.ts` (5), `modals.test.tsx` (5)                     |
+| **Severe winter smog**                      | Official CPCB India NAQI sub-index calculation, hourly diurnal chart/table, 12-hour forecast spike alerts, and evening temperature-inversion guidance                                                                     | `src/engines/aqi-interpreter.ts`, `src/engines/alert-engine.ts`, `HourlyForecastChart.tsx`                | `aqi-interpreter.test.ts` (13), `alert-and-freshness.test.ts` (11)  |
+| **Low-emission daily routines**             | Deterministic timeline covering morning fitness, commute shifts / outdoor-work pacing, school pickup windows, errand consolidation, and evening wind-down                                                                 | `src/engines/routine-engine.ts`, `routine-rules.ts`, `routine-commute-rules.ts`, `RoutineScreen.tsx`      | `routine-engine.test.ts` (9), `screens.test.tsx`                    |
+| **Indoor air quality hacks**                | Safe ventilation window advisor paired with LPG/PNG/biomass combustion exhaust warnings, source control checklists, CADR room sizing, and hard ozone/myth exclusions                                                      | `src/engines/indoor-engine.ts`, `src/data/indoor-actions.ts`, `src/components/indoor/*`                   | `indoor-engine.test.ts` (10), `screens.test.tsx`                    |
+| **Direct impact of choices**                | Side-by-side **1. Personal Exposure Management** vs. **2. Illustrative Avoided Emissions** with transparent _"How we calculated this"_ formulas and provenance table                                                      | `src/engines/impact-engine.ts`, `src/components/impact/*`                                                 | `impact-engine.test.ts` (9), `end-to-end-pipeline.test.ts` (1)      |
+| **Offline & Deterministic Fallbacks**       | Workbox PWA shell, IndexedDB `aqCache`, `ErrorBoundary` lazy-chunk guard, and 100% functional local planning without `GROQ_API_KEY` or internet access                                                                    | `src/storage/*`, `src/components/ui/ErrorBoundary.tsx`, `src/store/*`                                     | `indexeddb.test.ts` (6), `app-store.test.ts` (7)                    |
+
+---
+
+## System Architecture & Visual Diagrams (Mermaid)
+
+### 1. High-Level Functional Core / Imperative Shell Architecture
 
 ```mermaid
 flowchart TB
     subgraph External["External Services (Boundary-Validated)"]
         OM["Open-Meteo Air Quality API<br/>(~11 km CAMS Atmospheric Grid)"]
-        GEM["Groq AI Inference<br/>(gpt-oss-120b / 20b / qwen3.8-27b)"]
+        GROQ["Groq AI Inference<br/>(gpt-oss-120b → gpt-oss-20b → qwen3.8-27b)"]
     end
 
     subgraph Serverless["Vercel Serverless Edge (/api/chat)"]
-        API["api/chat.ts<br/>Method · IP Rate Limit · 8KB Cap"]
-        GRD["api/_guardrails.ts<br/>Zod Request/Response · Prompt Boundary"]
+        API["api/chat.ts<br/>POST Guard · 20/min IP Limit · 8KB Cap · Fallback"]
+        GRD["api/_guardrails.ts<br/>Shared Zod Contract · Immutable Safety Rules"]
         API <--> GRD
     end
 
-    subgraph ClientCore["Client Deterministic Core (Offline-Capable PWA)"]
+    subgraph ClientCore["Client Deterministic Core (100% Offline-Capable PWA)"]
         PROV["src/providers/open-meteo.ts<br/>CO µg→mg · Zod Schema · Null Omission"]
         DEMO["src/providers/sample-data.ts<br/>Opt-In Synthetic Winter Smog Scenario"]
-        ENG["Pure Decision Engines (src/engines/)<br/>NAQI · Freshness · Windows · Routine<br/>Indoor · Impact · Alerts"]
-        IDB["IndexedDB (src/storage/db.ts)<br/>Zod Read/Write Gate + Quarantine"]
-        STORE["Zustand Modular Slices (src/store/)<br/>aqSlice + planningSlice"]
+        ENG["Pure Engines (src/engines/, <180 lines each)<br/>NAQI · Freshness · Windows · Routine<br/>Indoor · Impact · Alerts"]
+        IDB["IndexedDB (db.ts + aq-cache.ts)<br/>Zod Read/Write Gate + Quarantine"]
+        STORE["Modular Zustand Store (src/store/)<br/>aqSlice + planningSlice + useShallow"]
     end
 
-    subgraph ClientShell["Accessible UI & Privacy-Minimal AI Client"]
+    subgraph ClientShell["Accessible UI, Fault Containment & Privacy-Minimal AI"]
         CTX["src/ai/context-builder.ts<br/>City-Only Privacy Filter"]
-        SAFE["src/ai/safety.ts<br/>Urgent Symptom Redirect + Content Filter"]
-        UI["7 Lazy-Loaded Screens (src/components/)<br/>Home · Routine · Indoor · Choices · Impact · Community · Assistant"]
+        SAFE["src/ai/safety.ts<br/>Urgent Redirect + Content Filter"]
+        ERR["ErrorBoundary + StatusBanner<br/>Chunk Recovery + Storage/AQ Alerts"]
+        UI["7 Lazy Screens + Accessible Modals<br/>(WCAG 2.1 AA · >=44px Targets)"]
     end
 
     OM -->|"HTTPS JSON"| PROV
@@ -110,15 +128,15 @@ flowchart TB
     DEMO -.->|"Explicit Demo Toggle"| STORE
     IDB <-->|"Hydrate / Persist"| STORE
     STORE <--> ENG
-    STORE --> UI
+    STORE --> ERR --> UI
     STORE --> CTX
     CTX -->|"POST /api/chat"| API
-    API <-->|"Server Key Only"| GEM
+    API <-->|"Server Key Only"| GROQ
     API -->|"Validated JSON"| SAFE
     SAFE -->|"Fallback on Offline/Error"| UI
 ```
 
-### 2. The Eight-Stage Clean-Air Intelligence Loop
+### 2. Eight-Stage Clean-Air Intelligence Loop
 
 ```mermaid
 flowchart LR
@@ -132,16 +150,14 @@ flowchart LR
     AD -.->|"Continuous Local Loop"| A
 ```
 
-### 3. Data Sourcing, Provenance & Offline Resilience State Machine
-
-Saansathi strictly prevents silent fallback to synthetic numbers when live providers fail. Sample data is reachable **only** via the explicit **Load Sample Demo** control.
+### 3. Data Provenance, Cache Fallback & Demo Isolation State Machine
 
 ```mermaid
 stateDiagram-v2
     [*] --> HydrateIndexedDB: App Startup
     HydrateIndexedDB --> FetchingLive: Saved Location Loaded
     FetchingLive --> LiveForecastReady: Open-Meteo HTTP 200 + Zod Valid
-    FetchingLive --> CachedLastKnown: Network Timeout / 429 / 5xx & Cache Exists
+    FetchingLive --> CachedLastKnown: Timeout / 429 / 5xx & aqCache Exists
     FetchingLive --> DataUnavailable: Network Failure & Empty Cache
     LiveForecastReady --> SampleDemoActive: User Clicks "Load Sample Demo"
     CachedLastKnown --> SampleDemoActive: User Clicks "Load Sample Demo"
@@ -164,7 +180,7 @@ stateDiagram-v2
 
 ```mermaid
 flowchart TD
-    USER["Household Commute & Daily Routine Context"] --> NAQI{"India NAQI Value"}
+    USER["Household Commute & Routine Context"] --> NAQI{"India NAQI Value"}
     NAQI -->|"<= 100 (Good / Satisfactory)"| CLEAN["Park/Green-Lane Walking OK<br/>Ventilate Rooms Now"]
     NAQI -->|"101–200 (Moderate)"| MOD{"Priority Protection<br/>Flags Set?"}
     MOD -->|"Yes (Children/Elders/Resp.)"| SHIFT["Move Vigorous Exercise Indoors<br/>Prefer Enclosed Transit"]
@@ -175,7 +191,7 @@ flowchart TD
     HIGH --> EMI["Track 2: Illustrative Avoided Emissions<br/>• WRI India fleet g CO2e/pkm factors<br/>• Tailpipe PM2.5/NOx omitted (null) if unreliable<br/>• Never claims citywide AQI drop"]
 ```
 
-### 5. AI Security, Privacy Minimization & Safety Sanitization Pipeline
+### 5. Groq AI Privacy Minimization, Schema Gate & Safety Sanitization Pipeline
 
 ```mermaid
 sequenceDiagram
@@ -183,7 +199,7 @@ sequenceDiagram
     participant UI as AssistantScreen.tsx
     participant Guard as safety.ts / context-builder.ts
     participant API as /api/chat (Vercel Function)
-    participant Gemini as Groq API (gpt-oss-120b)
+    participant Groq as Groq API (gpt-oss-120b)
 
     Household->>UI: Submits Question
     UI->>Guard: hasUrgentMedicalSymptoms(question)
@@ -198,10 +214,10 @@ sequenceDiagram
             API-->>UI: Typed HTTP Error
             UI->>UI: buildDeterministicFallbackResponse()
         else Valid Server Key
-            API->>Gemini: System Instruction + Structured JSON Schema (temp 0.3)
-            Gemini-->>API: Structured JSON Response
-            API->>API: Zod ResponseSchema Validation
-            API-->>UI: Validated Payload
+            API->>Groq: System Instruction + JSON Contract (temp 0.3)
+            Groq-->>API: Structured JSON Response (with model fallback)
+            API->>API: stripJsonFences() + normalizeLlmJson() + Zod ResponseSchema
+            API-->>UI: Validated Payload (origin: groq_ai)
             UI->>Guard: sanitizeAiResponse()
             Note over Guard: Strips ozone generators, inhaler edits,<br/>gas kitchen sealing, Severe cycling & fake URLs
             Guard-->>UI: Grounded, Cited Recommendations
@@ -211,186 +227,207 @@ sequenceDiagram
 
 ---
 
-## Domain Integrity & Scientific Guardrails
+## Domain Engineering & Scientific Mathematics
 
-### 1. Exact CPCB India NAQI Computation (`src/engines/aqi-interpreter.ts`)
+### 1. Exact CPCB India NAQI Computation (`src/engines/aqi-interpreter.ts`, `aqi-subindex.ts`)
 
-Saansathi never passes off US EPA or European EAQI numbers as Indian AQI:
+Saansathi evaluates all six statutory CPCB pollutants across official India breakpoints (`Good` 0–50, `Satisfactory` 51–100, `Moderate` 101–200, `Poor` 201–300, `Very Poor` 301–400, `Severe` 401–500+) using linear interpolation:
 
-- **Six Official Pollutants & Units:** Evaluates $\text{PM}_{2.5}$ ($\mu\text{g/m}^3$), $\text{PM}_{10}$ ($\mu\text{g/m}^3$), $\text{NO}_2$ ($\mu\text{g/m}^3$), $\text{SO}_2$ ($\mu\text{g/m}^3$), $\text{CO}$ ($\text{mg/m}^3$), and $\text{O}_3$ ($\mu\text{g/m}^3$) across CPCB's six categories (`Good` 0–50, `Satisfactory` 51–100, `Moderate` 101–200, `Poor` 201–300, `Very Poor` 301–400, `Severe` 401–500+).
-- **Automated Unit Conversion:** Open-Meteo delivers carbon monoxide in $\mu\text{g/m}^3$. `src/providers/open-meteo-schema.ts` explicitly divides CO concentrations by $1000$ to obtain $\text{mg/m}^3$ before computing CPCB breakpoints.
-- **CPCB 3-Pollutant Rule:** Marks `minimumCoverageMet = false` with an explicit UI transparency note if fewer than 3 pollutants are present or if neither $\text{PM}_{2.5}$ nor $\text{PM}_{10}$ is available.
-- **Averaging-Period Honesty:** Discloses explicitly whenever hourly forecast model estimates (`1h`) are interpreted against CPCB breakpoints designed for `24h` / `8h` rolling averages.
-- **Null-Preserving Ingestion:** Missing pollutants (`null` or negative) are omitted—never coerced to `0`.
+$$I_p = \frac{I_{\text{Hi}} - I_{\text{Lo}}}{C_{\text{Hi}} - C_{\text{Lo}}} \left(C_p - C_{\text{Lo}}\right) + I_{\text{Lo}}, \qquad \text{NAQI} = \max_{p \in \mathcal{P}_{\text{valid}}} I_p$$
 
-### 2. Evidence-Only Indoor Air & Combustion Safety (`src/engines/indoor-engine.ts`)
+- **Unit Normalization:** Open-Meteo supplies CO in $\mu\text{g/m}^3$. `normalizeConcentrationUnit()` converts CO to $\text{mg/m}^3$ ($C_{\text{mg/m}^3} = C_{\mu\text{g/m}^3} / 1000$) prior to bracket lookup.
+- **3-Pollutant Coverage Rule:** Sets `minimumCoverageMet = false` with an explicit UI limitation notice if fewer than 3 pollutants are present or if neither $\text{PM}_{2.5}$ nor $\text{PM}_{10}$ is reported.
+- **Averaging-Period Transparency:** Explicitly discloses whenever hourly CAMS model predictions (`1h`) are interpreted against CPCB `24h` ($\text{PM}_{2.5}, \text{PM}_{10}, \text{NO}_2, \text{SO}_2$) or `8h` ($\text{CO}, \text{O}_3$) thresholds.
+- **Zero Foreign Substitution:** Never swaps US EPA or European EAQI values into `India NAQI`.
 
-- **Hard Gas/Fuel Combustion Interlock:** If a household reports `lpg_gas`, `piped_gas`, `biomass`, or `mixed` cooking fuels, `evaluateVentilationGuidance()` mandates running kitchen exhaust or cracking a window whenever burners are lit to prevent indoor CO and $\text{NO}_2$ buildup.
-- **Strict Ban on Unsafe/Unproven Advice:** Ozone-generating air purifiers are systematically excluded at the data, engine, and AI filter layers; houseplants, salt lamps, and steam are rejected as $\text{PM}_{2.5}$ controls.
-- **CADR Room Sizing:** When a user enters their HEPA purifier's Clean Air Delivery Rate ($\text{m}^3/\text{h}$), Saansathi computes rough bedroom coverage ($\text{CADR} / 12\text{ m}^2$ for ~4–5 air changes per hour).
+### 2. Combustion-Safe Indoor Air & CADR Sizing (`src/engines/indoor-engine.ts`)
+
+- **Hard Combustion Safety Interlock:** When `cookingFuel` is `lpg_gas`, `piped_gas`, `biomass`, or `mixed`, `evaluateVentilationGuidance()` mandates exhaust operation or brief window cracking during active burners to avoid acute indoor $\text{CO}$ and $\text{NO}_2$ accumulation.
+- **CADR Room Coverage Formula:** Portable HEPA sizing estimates bedroom effectiveness via $\text{Coverage (m}^2) \approx \text{CADR (m}^3\text{/h)} / 12$ (~4–5 air changes per hour at typical urban ceiling heights).
+- **Myth & Hazard Exclusion:** Intentional ozone air cleaners are systematically blocked across registries, engines, system prompts, and regex filters (`epa-ozone-caution`).
 
 ---
 
-## Design Patterns & Algorithmic Complexity Proofs
+## Defensive Engineering & Failure-Mode Matrix
 
-### Architectural Patterns Used
+| Failure Mode / Edge Case                     | Detection Mechanism                           | Graceful Recovery Behavior                                                                                               | Verifying Test                            |
+| :------------------------------------------- | :-------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------- | :---------------------------------------- |
+| **Offline on Repeat Visit**                  | `navigator.onLine` + Workbox SW               | Reopens precached shell; hydrates last valid IndexedDB snapshot + preserves original reading timestamps                  | `saansathi.spec.ts`                       |
+| **Open-Meteo `429` / Timeout / 5xx**         | `OpenMeteoAirQualityProvider` + `AbortSignal` | Throws typed `ProviderError`; loads `aqCache` or displays honest `Data unavailable` + `aqErrorMessage` in `StatusBanner` | `open-meteo.test.ts`, `app-store.test.ts` |
+| **Out-of-Order Location Switching**          | `activeAqRequestId` monotonic token           | Drops stale slow HTTP responses so newer city selections are never overwritten                                           | `app-store.test.ts`                       |
+| **Corrupted / Quota-Full IndexedDB**         | Zod `safeParse()` + `QuotaExceededError`      | Quarantines bad entries (`errorCode: 'corrupted'`); surfaces `storageWarning` in `StatusBanner`                          | `indexeddb.test.ts`, `app-store.test.ts`  |
+| **Groq Primary Model `503` / `429` / `404`** | `handleChatRequest` candidate loop            | Cascades automatically (`gpt-oss-120b` -> `gpt-oss-20b` -> `qwen/qwen3.8-27b`)                                           | `server-endpoint.test.ts`                 |
+| **Drifted LLM JSON Shapes**                  | `stripJsonFences()` + `normalizeLlmJson()`    | Strips markdown fences and coerces object-keyed recommendations/string lists before `ResponseSchema.safeParse()`         | `server-endpoint.test.ts`                 |
+| **Missing `GROQ_API_KEY` or Offline AI**     | `503 MISSING_API_KEY` / network catch         | Seamlessly renders `buildDeterministicFallbackResponse()` grounded in local household rules                              | `ai-safety-and-context.test.ts`           |
+| **Urgent Respiratory Symptoms in Chat**      | `hasUrgentMedicalSymptoms()` regex            | Short-circuits before network call with local emergency guidance (`112 / 108`)                                           | `ai-safety-and-context.test.ts`           |
+| **Lazy Route Chunk Load Crash**              | React `ErrorBoundary` around `<Suspense>`     | Renders accessible recovery alert with one-click return to Home dashboard                                                | `primitives.test.tsx`                     |
 
-- **Functional Core / Imperative Shell:** Pure side-effect-free calculation engines (`src/engines/*`) are completely isolated from browser APIs, React state, and IndexedDB persistence (`src/storage/*`).
-- **Zustand Modular Slice Pattern:** State management (`src/store/useAppStore.ts`) composes `createAqSlice` (`src/store/aqSlice.ts`) and `createPlanningSlice` (`src/store/planningSlice.ts`), avoiding monolithic god-hooks while keeping every module well below 200 lines.
-- **Defensive Zod Validation Gates:** All external boundaries—Open-Meteo HTTP JSON, IndexedDB storage hydration, `/api/chat` serverless payloads, and Gemini structured JSON outputs—pass through strict runtime Zod schemas (`safeParse`), gracefully quarantining or rejecting corrupted inputs instead of trusting casts.
-- **Zero-Allocation $O(1)$ Registry Indexing:** Breakpoints, categories, emission factors, and authoritative source citations are pre-compiled into `ReadonlyMap` and `Set` structures (`INDIA_CATEGORY_BY_NAME`, `EMISSION_FACTOR_BY_MODE`, `SOURCE_BY_ID`, `VALID_SOURCE_IDS`) at module load.
-- **Single-Flight Request Guard:** `activeAqRequestId` monotonic token prevents stale location responses from overwriting newer selections during rapid user switching.
+---
+
+## Design Patterns, Type Safety & Algorithmic Complexity Proofs
+
+### Architectural & TypeScript Guarantees
+
+- **Strict Compiler Enforcement Everywhere:** `tsconfig.app.json`, `tsconfig.node.json`, and `tsconfig.test.json` enforce `strict`, `noImplicitAny`, `strictNullChecks`, `noUncheckedIndexedAccess`, `noUnusedLocals`, and `noUnusedParameters` across `src/`, `api/`, and `tests/`.
+- **Single-Source Contracts & Safe Enum Guards:** `src/ai/schemas.ts` and `src/data/evidence-ids.ts` are shared directly with `api/_guardrails.ts` (zero schema duplication). All interactive `<select>` inputs parse via Zod (`parseEnumValue` in `src/domain/select-guards.ts`), leaving **zero `as` casts** and **zero `!` assertions**.
+- **Selective Store Subscriptions:** All 7 screens and `App.tsx` subscribe via `zustand/react/shallow` (`useShallow`), preventing unrelated slice updates from re-rendering inactive views.
 
 ### Algorithmic Complexity Analysis
 
-Let $P$ be the number of measured pollutants ($\le 6$), $B$ the CPCB brackets per pollutant ($6$), $H$ the hourly forecast horizon ($\le 36$), $S$ the routine slots ($\le 6$), and $I$ the indoor template library size ($7$).
+Let $P \le 6$ be measured pollutants, $B = 6$ CPCB brackets per pollutant, $H \le 36$ hourly forecast steps, $S \le 6$ routine slots, and $I = 7$ indoor templates.
 
-| Engine Operation              |   Time Complexity    | Space Complexity | Architectural Justification                                               |
-| :---------------------------- | :------------------: | :--------------: | :------------------------------------------------------------------------ |
-| `computePollutantSubIndex`    |    $O(B) = O(1)$     |      $O(1)$      | Fixed 6-tier bracket scan per pollutant                                   |
-| `interpretIndiaNAQI`          | $O(P \log P) = O(1)$ |      $O(P)$      | Evaluates up to 6 pollutants and sorts descending                         |
-| `findBestOutdoorWindows`      |    $O(H \log H)$     |      $O(H)$      | Single linear pass over $\le 24$ 2-hour sliding pairs + sort              |
-| `evaluateReadingFreshness`    |        $O(1)$        |      $O(1)$      | Pure timestamp delta classification                                       |
-| `generateDailyRoutine`        |      $O(S + H)$      |      $O(S)$      | Calls window finder once, then evaluates 5–6 fixed household rules        |
-| `evaluateVentilationGuidance` |        $O(H)$        |      $O(1)$      | Threshold branch + single best-window lookup                              |
-| `generateIndoorActions`       | $O(I \log I) = O(1)$ |      $O(I)$      | Linear filter/map over 7 evidence templates + priority sort               |
-| `calculateTransportImpact`    |        $O(1)$        |      $O(1)$      | Direct `ReadonlyMap.get(mode)` arithmetic                                 |
-| `evaluateCleanAirAlerts`      |        $O(H)$        |      $O(1)$      | Single `Set`-deduplicated evaluation + $\le 12$ hour spike scan           |
-| `sanitizeAiResponse`          |    $O(R \cdot K)$    |      $O(R)$      | Bounded checks ($R \le 4$ recs, $K = 4$ regex rules, `Set` URL allowlist) |
-
----
-
-## Serverless AI Endpoint Specification (`/api/chat`)
-
-`api/chat.ts` exposes a single hardened Edge/Serverless `POST` handler backed by `api/_guardrails.ts` and mounted seamlessly in local Vite dev/preview via `vite.config.ts`.
-
-| Boundary Control                | Configuration                                                                                                             | Behavior on Violation                                                                         |
-| :------------------------------ | :------------------------------------------------------------------------------------------------------------------------ | :-------------------------------------------------------------------------------------------- |
-| **HTTP Method Guard**           | `POST` only (`OPTIONS` 204)                                                                                               | `405 METHOD_NOT_ALLOWED`                                                                      |
-| **Sliding-Window Rate Limiter** | 20 requests / 60s per `x-forwarded-for` IP                                                                                | `429 RATE_LIMITED`                                                                            |
-| **Payload Body Cap**            | `MAX_BODY_BYTES = 8192` (8 KB)                                                                                            | `413 PAYLOAD_TOO_LARGE`                                                                       |
-| **Request Validation**          | `RequestSchema` (question 2–800 chars, bounded city context)                                                              | `400 INVALID_JSON` / `400 VALIDATION_ERROR`                                                   |
-| **Credential Isolation**        | Server-side `process.env.GROQ_API_KEY` (never `VITE_*`)                                                                   | `503 MISSING_API_KEY` → client runs offline fallback                                          |
-| **Model & Parameters**          | `openai/gpt-oss-120b` (fallback chain: `openai/gpt-oss-20b` → `qwen/qwen3.8-27b`), `temperature: 0.3`, `max_tokens: 2048` | Cascades through fallback models on `503`/`429`/`404`; otherwise triggers client offline plan |
-| **Response Schema Gate**        | `ResponseSchema` strict Zod parse prior to returning `200`                                                                | `502 INVALID_AI_SCHEMA`                                                                       |
+| Engine Operation              |   Time Complexity    | Space Complexity | Implementation Proof                                                            |
+| :---------------------------- | :------------------: | :--------------: | :------------------------------------------------------------------------------ |
+| `computePollutantSubIndex`    |    $O(B) = O(1)$     |      $O(1)$      | Fixed 6-tier breakpoint scan per pollutant (`aqi-subindex.ts`)                  |
+| `interpretIndiaNAQI`          | $O(P \log P) = O(1)$ |      $O(P)$      | Evaluates up to 6 unique pollutants via `Set` and sorts descending              |
+| `findBestOutdoorWindows`      |    $O(H \log H)$     |      $O(H)$      | Linear 2-hour daytime sliding window evaluation + ascending NAQI sort           |
+| `evaluateReadingFreshness`    |        $O(1)$        |      $O(1)$      | Pure timestamp age delta classification                                         |
+| `generateDailyRoutine`        |      $O(S + H)$      |      $O(S)$      | Calls window finder once, evaluates bounded household rules                     |
+| `evaluateVentilationGuidance` |        $O(H)$        |      $O(1)$      | Threshold branch + single best-window lookup                                    |
+| `generateIndoorActions`       | $O(I \log I) = O(1)$ |      $O(I)$      | Linear filter/map over 7 evidence templates + priority sort                     |
+| `calculateTransportImpact`    |        $O(1)$        |      $O(1)$      | Direct `EMISSION_FACTOR_BY_MODE` `ReadonlyMap.get(mode)` arithmetic             |
+| `evaluateCleanAirAlerts`      |        $O(H)$        |      $O(1)$      | Single `Set`-deduplicated pass + 12-hour forecast spike scan                    |
+| `sanitizeAiResponse`          |    $O(R \cdot K)$    |      $O(R)$      | Bounded pass ($R \le 6$ recs, $K = 4$ safety regexes, `VALID_SOURCE_IDS` `Set`) |
 
 ---
 
-## Performance & Production Bundle Footprint
+## Serverless GenAI Endpoint Specification (`/api/chat`)
 
-Verified output from `npm run build` (`vite v8.3.8`, `tsc -b`, `vite-plugin-pwa`):
+`api/chat.ts` exposes a single Vercel Serverless `POST` endpoint backed by shared Zod contracts (`api/_guardrails.ts`) and mounted identically in Vite dev/preview middleware (`vite.config.ts`).
 
-| Asset / Chunk                                                                           |           Raw Size |                Gzip Size | Optimization Strategy                                    |
-| :-------------------------------------------------------------------------------------- | -----------------: | -----------------------: | :------------------------------------------------------- |
-| `dist/index.html`                                                                       |            1.06 kB |                  0.55 kB | Minimal SPA mount shell + CSP compatibility              |
-| `dist/assets/index-*.css`                                                               |           30.90 kB |                  6.70 kB | Purged Tailwind CSS v4 warm high-contrast palette        |
-| `dist/assets/index-*.js`                                                                |          ~336.2 kB |                ~103.9 kB | Core React 19 runtime + Home dashboard                   |
-| `dist/assets/state-*.js`                                                                |           92.64 kB |                 26.61 kB | Split `zustand` + `idb` + `zod` vendor chunk             |
-| `dist/assets/radix-*.js`                                                                |           50.71 kB |                 16.84 kB | Accessible `@radix-ui` modal primitives chunk            |
-| `RoutineScreen` / `IndoorScreen` / `ChoicesScreen` / `ImpactScreen` / `CommunityScreen` |  5.2 – 7.2 kB each |        1.7 – 2.5 kB each | Route-level `React.lazy()` dynamic code splitting        |
-| `AssistantScreen`                                                                       |           16.10 kB |                  6.14 kB | On-demand chunk (zero impact on initial paint)           |
-| **Workbox Service Worker**                                                              | **~564 KiB total** | **21 precached entries** | `NetworkFirst` runtime AQ cache (1h TTL) + offline shell |
+| Control                         | Configuration                                                                     | Behavior on Violation                                                                               |
+| :------------------------------ | :-------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------- |
+| **HTTP Method Guard**           | `POST` only (`OPTIONS` 204 in dev)                                                | `405 METHOD_NOT_ALLOWED`                                                                            |
+| **Sliding-Window Rate Limiter** | `20` requests / `60s` per client IP                                               | `429 RATE_LIMITED`                                                                                  |
+| **Payload Body Cap**            | `MAX_BODY_BYTES = 8192` (`8 KB`)                                                  | `413 PAYLOAD_TOO_LARGE`                                                                             |
+| **Request Contract**            | `RequestSchema` (2–800 char question + bounded city context)                      | `400 INVALID_JSON` / `400 VALIDATION_ERROR`                                                         |
+| **Credential Isolation**        | Server-side `process.env.GROQ_API_KEY` (never `VITE_*`)                           | `503 MISSING_API_KEY` -> client deterministic fallback                                              |
+| **Inference & Fallback Chain**  | `openai/gpt-oss-120b` -> `openai/gpt-oss-20b` -> `qwen/qwen3.8-27b` (`temp: 0.3`) | Cascades automatically on `503`/`429`/`404`; returns `429 AI_RATE_LIMIT` or `502 AI_PROVIDER_ERROR` |
+| **Response Gate**               | `stripJsonFences()` + `normalizeLlmJson()` + `ResponseSchema.safeParse()`         | Rejects invalid completions (`502`) before reaching client                                          |
 
 ---
 
-## Verification & Automated Quality Proof
+## Accessibility Architecture (WCAG 2.1 AA + Real-Browser `axe-core`)
 
-All checks run natively in CI and locally via zero-ambiguity scripts in `package.json`:
+- **Semantic Landmarks & Skip Link:** `<header>`, dual `<nav>` (`Primary navigation` & `Mobile navigation`), `<main id="main-content">`, `<footer>`, and `#main-content` skip link verified via Playwright `Tab` focus test.
+- **Universal Accessible Names & `>= 44×44 px` Targets:** All interactive buttons—including header `"Family Context"` (`sr-only sm:not-sr-only`), modal close (`h-11 w-11`), repeated `Mark Done` / `Accept` / `Complete` / `Check off` card toggles (unique `aria-label` + `aria-pressed`), and quick prompts—meet `44 px` touch targets and `WCAG 2.5.3` Label-in-Name.
+- **Cross-Viewport Live Regions:** Persistence status (`DesktopNavBar.tsx` `<output aria-live="polite">`), geolocation feedback (`GeoConsentPanel.tsx`), clipboard confirmation (`CommunityScreen.tsx`), impact logging (`ChoicesScreen.tsx`), AI loading (`aria-busy`), and global notices (`StatusBanner.tsx`) announce across mobile and desktop viewports.
+- **Data Tables & Chart Parity:** Both `HourlyForecastChart.tsx` (chart <-> table toggle) and `EmissionFactorsTable.tsx` ship `<caption className="sr-only">` and `<th scope="col">`.
+- **Dual Automated Audits:** Passes `axe-core` with **zero violations at any severity level** across all 7 screens + both modals in `tests/unit/ui/accessibility.test.tsx`, AND passes real headless Chromium `axe-core` CSS `color-contrast` + WCAG 2.1 AA verification in `tests/e2e/saansathi.spec.ts`.
+
+---
+
+## Production Bundle Footprint, Coverage & Automated Verification
+
+### Production Build Metrics (`npm run build`)
+
+| Asset / Chunk                                             |         Raw Size |                Gzip Size | Strategy                                         |
+| :-------------------------------------------------------- | ---------------: | -----------------------: | :----------------------------------------------- |
+| `dist/index.html`                                         |        `1.06 kB` |                `0.55 kB` | Minimal SPA shell + manifest links               |
+| `dist/assets/index-*.css`                                 |       `32.57 kB` |                `6.79 kB` | Tailwind CSS v4 `@theme` high-contrast palette   |
+| `dist/assets/index-*.js`                                  |      `341.26 kB` |              `105.70 kB` | React 19 runtime + Home dashboard                |
+| `dist/assets/state-*.js`                                  |       `93.46 kB` |               `26.86 kB` | Vendor split (`zustand`, `idb`, `zod`)           |
+| `dist/assets/radix-*.js`                                  |       `50.71 kB` |               `16.84 kB` | Accessible `@radix-ui/react-dialog` primitives   |
+| `Routine` / `Choices` / `Impact` / `Indoor` / `Community` |   `5.7 – 7.9 kB` |           `1.8 – 2.6 kB` | On-demand `React.lazy()` route chunks            |
+| `AssistantScreen`                                         |       `16.10 kB` |                `6.13 kB` | On-demand AI assistant chunk                     |
+| **Workbox Service Worker**                                | **`568.73 KiB`** | **20 precached entries** | Runtime Open-Meteo `NetworkFirst` cache (1h TTL) |
+
+### V8 Coverage Summary (`npm run coverage`)
+
+Enforced thresholds in `vitest.config.ts` (`statements >= 90%`, `branches >= 82%`, `functions >= 88%`, `lines >= 90%`):
+
+| Scope                                                        |  Statements  |   Branches   |  Functions   |    Lines     |
+| :----------------------------------------------------------- | :----------: | :----------: | :----------: | :----------: |
+| **All Measured (`src/` + `api/`)**                           | **`93.38%`** | **`82.87%`** | **`93.47%`** | **`95.46%`** |
+| `api/` (`chat.ts`, `_guardrails.ts`)                         |   `93.40%`   |   `89.83%`   |  `100.00%`   |   `93.97%`   |
+| `src/engines/` (all 10 modules)                              |   `93.92%`   |   `88.85%`   |  `100.00%`   |   `96.88%`   |
+| `src/ai/` (`context-builder`, `safety`, `schemas`, `client`) |   `93.65%`   |   `86.95%`   |   `81.25%`   |   `98.30%`   |
+| `src/providers/`                                             |   `94.84%`   |   `88.46%`   |   `81.81%`   |   `97.82%`   |
+| `src/data/` & `src/domain/` & `src/components/ui/`           |  `100.00%`   |  `100.00%`   |  `100.00%`   |  `100.00%`   |
+
+### Local Setup & Full CI Verification Commands
 
 ```bash
-# 1. Install dependencies (Node >= 20 required)
-npm install --legacy-peer-deps
+# 1. Install dependencies cleanly (Node >= 20 required)
+npm install
 
-# 2. Configure optional server-side AI credentials
+# 2. Configure optional server-side Groq AI credentials
 cp .env.example .env.local
-# Add GROQ_API_KEY=... and GROQ_MODEL=openai/gpt-oss-120b in .env.local
+# Add GROQ_API_KEY=... and GROQ_MODEL=openai/gpt-oss-120b
 
-# 3. Start local dev server (includes local /api/chat middleware)
+# 3. Start local Vite dev server (mounts /api/chat automatically)
 npm run dev
-```
 
-### Complete Verification Commands
-
-```bash
-npm run typecheck      # Strict TypeScript check across src, api, and vite config (0 errors)
-npm run lint           # Oxlint across all TS/TSX files with React & jsx-a11y rules (0 warnings)
-npm run format:check   # Prettier code style verification
-npm run test           # Runs 130 Vitest unit, integration, accessibility & hygiene tests
-npm run coverage       # V8 coverage report (86.7% stmts / 88.9% lines; 93.7% engines; 93.7% AI)
-npm run build          # Production tsc -b + Vite + Workbox PWA build
-npm run e2e            # Builds preview & runs 3 Playwright end-to-end + offline browser workflows
-npm run check          # Full CI gate: typecheck && lint && format:check && test && build
+# 4. Run full verification gates
+npm run typecheck      # tsc -b --noEmit across src/, api/, and tests/ (0 errors)
+npm run lint           # oxlint across 105 TS/TSX files (0 warnings, 0 errors)
+npm run format:check   # Prettier + Tailwind CSS formatting check
+npm run test           # 147 Vitest tests across 20 files
+npm run coverage       # V8 coverage + threshold enforcement (src/ + api/)
+npm run build          # Production build + Workbox PWA manifest
+npm run e2e            # 4 Playwright Chromium E2E + real-browser axe-core contrast tests
+npm run check          # Combined gate: typecheck && lint && format:check && test && build
 ```
 
 ---
 
-## Repository Structure
+## Repository Structure & Modularity Budget (`<= 200` Lines)
+
+Every `.ts` / `.tsx` file under `src/` and `api/` is programmatically verified to remain **`<= 200` lines** (`tests/quality/hygiene.test.ts`):
 
 ```text
 api/
-  _guardrails.ts            # Zod schemas, Gemini responseSchema, IP rate limiter, safety system rules
-  chat.ts                   # Serverless POST /api/chat handler (Groq AI + fallback chain)
-docs/                       # Architecture, Security, Accessibility, Testing, Data Sources, Offline, Deployment
-public/                     # Web app manifest and vector icon
+  _guardrails.ts            # Shared Zod contract export, IP rate limiter, immutable safety rules
+  chat.ts                   # Serverless POST /api/chat (Groq 3-model cascade + fence/JSON normalizer)
+docs/                       # Expanded Architecture, Security, Accessibility, Testing, Data Sources, Offline, Deployment
+public/                     # Web app manifest & vector favicon
 src/
-  ai/                       # Client-side context minimizer, safety response sanitizer, offline fallback
+  ai/                       # Privacy context minimizer, response sanitizer, schemas, offline fallback
   components/
-    assistant/              # Ask Saansathi chat screen & structured message cards
-    choices/                # Better Choices commute/habit trade-off explorer
-    community/              # Local RWA/school/volunteer action checklist & privacy-safe export
-    dashboard/              # Home dashboard cards, location & household modals, SVG/table chart
-    impact/                 # Transparent Exposure vs. Emissions comparison & factor table
-    indoor/                 # Indoor Air Toolkit (source control, CADR sizing, combustion safety)
-    layout/                 # Semantic AppShell, offline/demo StatusBanner, navigation
-    routine/                # Full household daily routine timeline
-    ui/                     # Accessible Tailwind + Radix Dialog primitives
-  data/                     # Official CPCB NAQI breakpoints, 15 Indian cities, WRI emission factors, sources
-  domain/                   # Zod schemas & strict TS types for all 7 domain boundaries
-  engines/                  # Pure deterministic engines (<180 lines each; 96.2% line coverage)
+    assistant/              # Ask Saansathi chat screen & structured citations bubble
+    choices/                # Commute/habit trade-off explorer & zero-cost habits card
+    community/              # Local RWA/school action checklist, debounced form & copy export
+    dashboard/              # Home cards, location/household modals, responsive chart <-> table
+    impact/                 # Decoupled Exposure vs. Emissions summary & factor table
+    indoor/                 # Indoor setup form, combustion interlock & evidence action cards
+    layout/                 # Semantic AppShell, shared AppNavBar, ErrorBoundary-ready StatusBanner
+    routine/                # Full daily routine timeline with status & alternative toggles
+    ui/                     # Tailwind @theme + Radix Dialog primitives & ErrorBoundary
+  data/                     # CPCB NAQI breakpoints, 15 cities, demo defaults, WRI/CEA factors, sources
+  domain/                   # Zod schemas across 7 domains + parseEnumValue select guards
+  engines/                  # 10 pure deterministic engines (< 180 lines each; 100% function coverage)
   offline/                  # Service worker registration
-  providers/                # Open-Meteo AQ adapter (with schema validator) + explicit synthetic demo bundle
-  storage/                  # IndexedDB wrapper (idb + Zod validation) and repository facade
-  store/                    # Modular Zustand store (aqSlice + planningSlice + defaults)
+  providers/                # Open-Meteo adapter + Zod response validator + opt-in demo bundle
+  storage/                  # IndexedDB kv-store (db.ts), AQ cache (aq-cache.ts) & typed repository
+  store/                    # Modular Zustand slices (aqSlice + planningSlice + defaults)
 tests/
-  e2e/                      # Playwright Chromium workflows including offline reload & mobile nav
-  integration/              # Full Open-Meteo → Engines → IndexedDB pipeline verification
-  quality/                  # Automated hygiene assertions (zero any, zero console.log, <=250 lines)
-  unit/                     # Unit tests across engines, schemas, data, providers, AI, storage, store & UI
+  e2e/                      # 4 Playwright Chromium E2E + real-browser axe-core contrast workflows
+  integration/              # Full Open-Meteo -> Engines -> AI Context -> IndexedDB pipeline test
+  quality/                  # Hygiene gate (<= 200 lines, zero any/console/Gemini/secret leaks)
+  unit/                     # Unit tests across engines, schemas, registries, providers, API, store & UI
 ```
 
 ---
 
-## Frequently Asked Questions (FAQ)
+## Frequently Asked Questions (FAQ) & Technical Documentation Index
 
-**1. Why use Open-Meteo (~11 km CAMS model) instead of directly scraping CPCB stations in the browser?**
-CPCB public dashboards do not expose a stable CORS-enabled unauthenticated JSON API suitable for reliable client-side PWA use. Saansathi uses Open-Meteo's open Copernicus CAMS API cleanly, converts CO to `mg/m³`, applies CPCB India NAQI breakpoints, and transparently discloses the ~11 km grid model and 1h averaging limitations on every screen. The `AirQualityProvider` interface in `src/providers/types.ts` supports dropping in a certified station proxy later with zero changes to engines or UI.
+**1. Why use Open-Meteo (`~11 km` CAMS model) instead of scraping CPCB dashboards directly?**
+CPCB public dashboards do not expose a stable CORS-enabled unauthenticated JSON API for reliable client-side PWAs. Saansathi consumes Open-Meteo's open CAMS API cleanly, normalizes $\text{CO}$ to $\text{mg/m}^3$, applies exact CPCB India NAQI breakpoints, and discloses the `~11 km` model resolution and `1h` averaging caveats visibly across the UI. `AirQualityProvider` (`src/providers/types.ts`) allows plugging in a station proxy later without touching engines or UI.
 
-**2. Can Saansathi run completely without a Groq API key or internet connection?**
-Yes. Every calculation (India NAQI, routine planning, indoor ventilation & CADR sizing, emission math, threshold alerts) runs locally in pure TypeScript. If `GROQ_API_KEY` is absent or the device is offline, **Ask Saansathi** automatically renders `buildDeterministicFallbackResponse()` grounded in the household's active plan.
+**2. Does Saansathi work 100% without `GROQ_API_KEY` or internet access?**
+Yes. Every calculation (India NAQI, routine scheduling, indoor CADR & combustion interlocks, avoided emissions, threshold alerts) executes locally in pure TypeScript. When offline or unconfigured, `Ask Saansathi` seamlessly serves `buildDeterministicFallbackResponse()` grounded in the active household plan.
 
-**3. Why does Saansathi warn against cycling to save emissions during Severe winter smog?**
-Because cutting tailpipe CO₂e (`Environmental Emissions`) and lowering particulate inhalation (`Personal Exposure`) are independent outcomes. Cycling 10 km along polluted urban roads during NAQI > 200 elevates minute ventilation and particulate intake; Saansathi explicitly flags this trade-off and prioritizes enclosed transit or remote workdays on peak smog days.
+**3. Why does Saansathi warn against cycling to save CO₂e during Severe winter smog?**
+Reducing tailpipe emissions (`Environmental Emissions`) and lowering particulate inhalation (`Personal Exposure`) are independent outcomes. Cycling 10–18 km along polluted corridors during NAQI $> 200$ elevates breathing minute ventilation and inhaled dose; Saansathi flags this conflict explicitly and prioritizes enclosed Metro/Bus transit or remote workdays.
 
----
-
-## Roadmap & Documentation Index
-
-### Potential Future Extensions
-
-- Optional server-side CPCB / State PCB station ingestion adapter implementing `AirQualityProvider` for station-grade 24h rolling observations alongside model forecasts.
-- Multilingual UI packs (Hindi, Marathi, Bengali, Tamil, Telugu) extending `preferredLanguage` in `HouseholdProfile`.
-- Encrypted optional household backup export/import file (`.saansathi.json`) with Zod schema verification on import.
-
-### Supporting Technical Documents
-
-| Document                                           | Focus                                                                               |
-| :------------------------------------------------- | :---------------------------------------------------------------------------------- |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)       | Core/Shell system design, component hierarchy, slice boundaries, complexity notes   |
-| [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md)       | CPCB NAQI, Open-Meteo, WHO, US EPA, and WRI India factor provenance & limitations   |
-| [docs/SECURITY.md](docs/SECURITY.md)               | Secret isolation, rate limits, CSP headers, prompt-injection & medical safety rails |
-| [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md)     | WCAG 2.1 AA checklist, keyboard navigation map, `axe-core` coverage notes           |
-| [docs/TESTING.md](docs/TESTING.md)                 | 130 Vitest tests + 3 Playwright E2E scenarios + V8 coverage breakdown               |
-| [docs/OFFLINE_SUPPORT.md](docs/OFFLINE_SUPPORT.md) | Workbox precaching, IndexedDB storage schema, offline fallback transitions          |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)           | Vercel production setup, environment variables, HTTP security headers               |
-| [SECURITY.md](SECURITY.md)                         | Vulnerability disclosure policy and supported versions                              |
-| [CONTRIBUTING.md](CONTRIBUTING.md)                 | Local development workflow, hygiene checks, and contribution standards              |
+| Document                                           | Focus                                                                                  |
+| :------------------------------------------------- | :------------------------------------------------------------------------------------- |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)       | Core/Shell design, modular Zustand slices, `ErrorBoundary`, shared contracts           |
+| [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md)       | CPCB NAQI equations, Open-Meteo, WHO, US EPA & WRI India provenance                    |
+| [docs/SECURITY.md](docs/SECURITY.md)               | `GROQ_API_KEY` server isolation, rate limiting, Zod gates, safety sanitization         |
+| [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md)     | WCAG 2.1 AA checklist, `44×44 px` touch targets, dual `axe-core` contrast verification |
+| [docs/TESTING.md](docs/TESTING.md)                 | 147 Vitest tests + 4 Playwright E2E workflows + V8 coverage breakdown                  |
+| [docs/OFFLINE_SUPPORT.md](docs/OFFLINE_SUPPORT.md) | Workbox precaching, IndexedDB quarantine, timestamp preservation                       |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)           | Vercel production setup, environment variables, GitHub Actions CI                      |
+| [SECURITY.md](SECURITY.md)                         | Vulnerability disclosure policy & privacy guarantees                                   |
+| [CONTRIBUTING.md](CONTRIBUTING.md)                 | Local development setup, strict TS/hygiene invariants & PR gate                        |

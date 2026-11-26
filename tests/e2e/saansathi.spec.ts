@@ -1,4 +1,8 @@
-import { expect, test, type BrowserContext } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const AXE_SOURCE_PATH = require.resolve('axe-core/axe.min.js');
 
 async function stubOpenMeteo(context: BrowserContext) {
   await context.route(/air-quality-api\.open-meteo\.com/, async (route) => {
@@ -35,73 +39,39 @@ async function stubOpenMeteo(context: BrowserContext) {
   });
 }
 
+async function dismissOnboardingModal(page: Page) {
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('button', { name: /Close dialog/i }).click();
+  await expect(page.getByRole('dialog')).not.toBeVisible();
+}
+
 test.describe('Saansathi End-to-End Workflows', () => {
-  test('supports demo mode, location change, routine/indoor actions, choices/impact math, community checklist, and offline persistence', async ({
+  test('onboards location, toggles sample demo, persists household edits across offline reload', async ({
     page,
     context,
   }) => {
     await stubOpenMeteo(context);
-
     await page.goto('/');
-    // First-launch location popup asks for location automatically
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await page.getByRole('button', { name: /Close dialog/i }).click();
+    await dismissOnboardingModal(page);
 
     await expect(page.getByRole('heading', { level: 1 })).toContainText('New Delhi');
     await expect(page.getByText(/India NAQI/i).first()).toBeVisible();
-    await expect(page.getByText(/Open-Meteo Air Quality/i).first()).toBeVisible();
 
-    // 1. Toggle Sample Demo mode and verify explicit demo banner
     await page.getByRole('button', { name: /Load Sample Demo/i }).click();
     await expect(page.getByText(/SAMPLE DEMO DATA ACTIVE/i)).toBeVisible();
     await page.getByRole('button', { name: /Exit Sample Demo/i }).click();
 
-    // 2. Manual Location Selector
     await page.getByRole('button', { name: /Change selected location/i }).click();
     await page.getByLabel(/Locality or neighbourhood/i).fill('Sector 62');
     await page.getByRole('button', { name: /Save & Use Location/i }).click();
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Sector 62');
 
-    // 3. Household Profile edit & persistence
     await page.getByRole('button', { name: /Family Context/i }).click();
     await page.getByLabel(/Household label/i).fill('Verma Household');
     await page.getByRole('button', { name: /Save Household Context/i }).click();
     await expect(page.getByText(/Verma Household/i)).toBeVisible();
 
-    // 4. My Routine action completion
-    await page.getByRole('button', { name: 'My Routine', exact: true }).click();
-    await expect(page.getByRole('heading', { name: /My Household Daily Routine/i })).toBeVisible();
-    await page.getByRole('button', { name: 'Complete' }).first().click();
-
-    // 5. Indoor Air checklist
-    await page.getByRole('button', { name: 'Indoor Air', exact: true }).click();
-    await expect(page.getByRole('heading', { name: /Indoor Air-Quality Toolkit/i })).toBeVisible();
-    await page
-      .getByRole('button', { name: /Check off/i })
-      .first()
-      .click();
-
-    // 6. Better Choices & Impact calculation
-    await page.getByRole('button', { name: 'Better Choices', exact: true }).click();
-    await page.getByRole('button', { name: /Log This Weekly Shift to Impact/i }).click();
-    await page.getByRole('button', { name: 'Impact', exact: true }).click();
-    await expect(page.getByText(/1. Personal Exposure Management/i)).toBeVisible();
-    await expect(page.getByText(/2. Illustrative Avoided Emissions/i)).toBeVisible();
-
-    // 7. Community Workspace
-    await page.getByRole('button', { name: 'Community', exact: true }).click();
-    await page.getByLabel(/Action title/i).fill('Guard warm-gear distribution');
-    await page.getByLabel(/Responsible role/i).fill('RWA Lead');
-    await page.getByRole('button', { name: /Add to Community Checklist/i }).click();
-    await expect(page.getByText('Guard warm-gear distribution')).toBeVisible();
-
-    // 8. Assistant Offline/Fallback check
     await context.setOffline(true);
-    await page.getByRole('button', { name: 'Ask Saansathi', exact: true }).click();
-    await page.getByRole('button', { name: 'What should my family prioritize today?' }).click();
-    await expect(page.getByText(/Deterministic Offline Fallback/i)).toBeVisible();
-
-    // 9. Reload persistence & reconnection
     await page.reload();
     await expect(page.getByText(/Offline mode/i)).toBeVisible();
     await expect(page.getByText(/Verma Household/i)).toBeVisible();
@@ -109,52 +79,144 @@ test.describe('Saansathi End-to-End Workflows', () => {
     await context.setOffline(false);
     await page.getByRole('button', { name: /Refresh air quality data/i }).click();
     await expect(page.getByText(/Verma Household/i)).toBeVisible();
-
-    // 10. Keyboard accessibility check on primary skip link from top of page
-    await page.reload();
-    await page.keyboard.press('Tab');
-    await expect(page.getByRole('link', { name: /Skip to main content/i })).toBeFocused();
   });
 
-  test('provides accessible data-table toggle for hourly chart and warns on active smog cycling trade-offs', async ({
+  test('executes routine, indoor checklist, choices-to-impact calculation, and community workspace', async ({
     page,
     context,
   }) => {
     await stubOpenMeteo(context);
     await page.goto('/');
-    await page.getByRole('button', { name: /Close dialog/i }).click();
-    await expect(page.getByText(/Today’s Hourly Outlook/i)).toBeVisible();
+    await dismissOnboardingModal(page);
 
     await page.getByRole('button', { name: /View accessible data table/i }).click();
     await expect(page.getByRole('table')).toBeVisible();
     await expect(page.getByRole('columnheader', { name: /Est. NAQI/i })).toBeVisible();
+
+    await page.getByRole('button', { name: 'My Routine', exact: true }).click();
+    await expect(page.getByRole('heading', { name: /My Household Daily Routine/i })).toBeVisible();
+    await page
+      .getByRole('button', { name: /^Complete:/i })
+      .first()
+      .click();
+
+    await page.getByRole('button', { name: 'Indoor Air', exact: true }).click();
+    await page
+      .getByRole('button', { name: /Check off/i })
+      .first()
+      .click();
 
     await page.getByRole('button', { name: 'Better Choices', exact: true }).click();
     await page.getByLabel(/Alternative to evaluate/i).selectOption('bicycle');
     await expect(page.getByRole('alert')).toContainText(
       /Exposure vs\. Emission Trade-off Warning/i,
     );
+    await page.getByLabel(/Alternative to evaluate/i).selectOption('metro');
+    await page.getByRole('button', { name: /Log This Weekly Shift to Impact/i }).click();
+    await page.getByRole('button', { name: 'Impact', exact: true }).click();
+    await expect(page.getByText(/1\. Personal Exposure Management/i)).toBeVisible();
+    await expect(page.getByText(/2\. Illustrative Avoided Emissions/i)).toBeVisible();
+
+    await page.getByRole('button', { name: 'Community', exact: true }).click();
+    await page.getByLabel(/Action title/i).fill('Guard warm-gear distribution');
+    await page.getByLabel(/Responsible role/i).fill('RWA Lead');
+    await page.getByRole('button', { name: /Add to Community Checklist/i }).click();
+    await expect(page.getByText('Guard warm-gear distribution')).toBeVisible();
   });
 
-  test('supports mobile bottom navigation and urgent medical redirect offline guard', async ({
+  test('handles mocked Groq AI 200 OK completion, offline fallback, urgent redirect, and mobile nav', async ({
     page,
     context,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await stubOpenMeteo(context);
+    await page.route('**/api/chat', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          summary: 'For New Delhi today, keep brisk exercise indoors and use Metro for commutes.',
+          recommendations: [
+            {
+              id: 'e2e-rec-1',
+              action: 'Use enclosed Metro transit for 18 km office trips',
+              timing: '08:30 AM',
+              reason: 'Avoids prolonged roadside PM2.5 inhalation.',
+              exposureConsideration: 'Lower breathing-corridor exposure.',
+              environmentalConsideration: 'Lower per-km CO2e than solo petrol cars.',
+              effort: 'low_effort',
+              confidence: 'high',
+              evidenceIds: ['cpcb-naqi', 'india-ghg-transport'],
+              caveats: ['Check last-mile dust levels.'],
+            },
+          ],
+          dataLimitations: ['Model forecast estimate (~11 km).'],
+          sourceIdsUsed: ['cpcb-naqi', 'india-ghg-transport'],
+          disclaimer: 'Environmental planning guidance only.',
+        }),
+      });
+    });
+
     await page.goto('/');
-    await page.getByRole('button', { name: /Close dialog/i }).click();
+    await dismissOnboardingModal(page);
 
     const mobileNav = page.getByRole('navigation', { name: 'Mobile navigation' });
     await expect(mobileNav).toBeVisible();
     await mobileNav.getByRole('button', { name: 'Assistant' }).click();
     await expect(page.getByRole('heading', { name: /Ask Saansathi/i })).toBeVisible();
 
+    // Mocked live Groq 200 OK flow
+    await page.getByRole('button', { name: 'What should my family prioritize today?' }).click();
+    await expect(page.getByText(/AI-Assisted Explanation \(Validated\)/i)).toBeVisible();
+    await expect(page.getByText(/Use enclosed Metro transit/i)).toBeVisible();
+
+    // Urgent medical symptom redirect without hitting API
     await page
       .getByPlaceholder(/Ask about timing walks/i)
       .fill('My father has severe breathlessness and chest pain');
     await page.getByRole('button', { name: 'Ask', exact: true }).click();
     await expect(page.getByText(/Medical Safety Redirect/i)).toBeVisible();
     await expect(page.getByText(/112 \/ 108/i)).toBeVisible();
+
+    // Offline fallback verification (unroute mock so offline network error triggers fallback)
+    await page.unroute('**/api/chat');
+    await context.setOffline(true);
+    await page
+      .getByRole('button', { name: 'When could I go for a walk based on the forecast?' })
+      .click();
+    await expect(page.getByText(/Deterministic Offline Fallback/i)).toBeVisible();
+  });
+
+  test('passes real-Chromium axe-core WCAG 2.1 AA + color-contrast audit and keyboard skip link', async ({
+    page,
+    context,
+  }) => {
+    await stubOpenMeteo(context);
+    await page.goto('/');
+    await dismissOnboardingModal(page);
+
+    // Keyboard skip link check from top of document
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('link', { name: /Skip to main content/i })).toBeFocused();
+
+    await page.addScriptTag({ path: AXE_SOURCE_PATH });
+    const homeAudit = await page.evaluate(async () => {
+      const axeApi = (
+        window as unknown as { axe: { run: () => Promise<{ violations: unknown[] }> } }
+      ).axe;
+      return axeApi.run();
+    });
+    expect(homeAudit.violations).toEqual([]);
+
+    // Also audit the amber-highlighted Ask Saansathi tab & assistant screen
+    await page.getByRole('button', { name: 'Ask Saansathi', exact: true }).click();
+    await expect(page.getByRole('heading', { name: /Ask Saansathi/i })).toBeVisible();
+    const assistantAudit = await page.evaluate(async () => {
+      const axeApi = (
+        window as unknown as { axe: { run: () => Promise<{ violations: unknown[] }> } }
+      ).axe;
+      return axeApi.run();
+    });
+    expect(assistantAudit.violations).toEqual([]);
   });
 });

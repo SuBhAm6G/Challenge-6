@@ -1,17 +1,33 @@
-# Offline-First Support & Resilience
+# Offline-First Support, IndexedDB Persistence & Fault Containment
 
-## What Works Offline
+Saansathi is engineered to remain genuinely useful during intermittent mobile connectivity, commuter dead zones, and AI backend outages—without ever falling back silently to synthetic numbers.
 
-Once the application shell has been loaded and cached by the Workbox service worker (`vite-plugin-pwa` in `vite.config.ts`):
+---
 
-- **App Shell:** Reopens offline from precached HTML/JS/CSS/SVG assets.
-- **Household & Indoor Profiles:** Fully editable and saved in IndexedDB (`saansathi-local-db`).
-- **Cached Readings:** Previously fetched Open-Meteo readings and forecasts remain visible with their original timestamps and explicit `Delayed` / `Last Known` / `Stale` freshness labels (`src/engines/freshness.ts`).
-- **Deterministic Engines:** Daily routine generation, indoor checklists, ventilation guidance, choice impact math, and community planning work 100% offline.
-- **Assistant Fallback:** `Ask Saansathi` detects offline/unavailable AI state and presents deterministic local recommendations rather than failing or fabricating responses.
+## 1. Multi-Layer Offline Architecture
 
-## Honest Limitations
+| Layer                             | Technology & Module                                         | Offline Capability & Failure Handling                                                                                                                    |
+| :-------------------------------- | :---------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **PWA Precaching**                | `vite-plugin-pwa` / Workbox (`vite.config.ts`)              | Precaches all 20 app-shell bundles (HTML, CSS, JS chunks, `favicon.svg`, `manifest.webmanifest`); excludes `/api/*` from navigation fallback             |
+| **Runtime AQ Cache**              | Workbox `NetworkFirst` + `src/storage/aq-cache.ts`          | Caches Open-Meteo JSON for 1h in Workbox and persists Zod-validated readings/forecasts per location key inside IndexedDB (`aqCache`)                     |
+| **Local State Persistence**       | `idb` + Zod (`src/storage/db.ts`, `repositories.ts`)        | Persists household profiles, indoor setups, alert preferences, routine actions, impact history, and community plans in `saansathi-local-db` (`appState`) |
+| **Timestamp & Freshness Honesty** | `src/engines/freshness.ts`                                  | Preserves original observation timestamps when offline and classifies readings as `Delayed`, `Last Known`, or `Stale`                                    |
+| **Pure Deterministic Core**       | `src/engines/*` (10 modules, `< 180` lines each)            | Runs 100% locally in pure TypeScript with zero network or LLM dependencies                                                                               |
+| **Lazy Chunk Fault Containment**  | `src/components/ui/ErrorBoundary.tsx` in `src/App.tsx`      | Catches lazy-route load or runtime errors and provides one-click recovery back to the Home dashboard                                                     |
+| **AI Assistant Offline Fallback** | `buildDeterministicFallbackResponse()` (`src/ai/client.ts`) | Automatically activates verified local household recommendations when offline, rate-limited, or missing `GROQ_API_KEY`                                   |
 
-- First-time visitors who have never loaded the app online cannot cache the PWA shell.
-- Live air-quality updates and Groq AI natural-language synthesis require network access.
-- When no cached reading exists for a newly selected city while offline, Saansathi displays `Data unavailable` rather than substituting hardcoded numbers.
+---
+
+## 2. Explicit Data-Provenance State Machine
+
+1. **Online Live Fetch Ready:** `OpenMeteoAirQualityProvider` fetches fresh forecast JSON, validates via `OpenMeteoResponseSchema`, updates `aqSlice`, and writes `aqCache`.
+2. **Offline / Upstream Failure with Cache:** `aqSlice.ts` detects provider timeout/`network`/`rate_limit`, loads last Zod-validated `aqCache` entry for the active location, preserves its original timestamp, and surfaces `aqErrorMessage` in `StatusBanner.tsx`.
+3. **Offline with Empty Cache:** Displays explicit `Data unavailable` (`value: null`) alongside deterministic guidance for unverified air conditions (`buildMorningRecommendation` unavailable branch) — **never substitutes fake readings**.
+4. **Opt-In Sample Demo Mode:** Synthetic Delhi winter-smog data (`src/providers/sample-data.ts`) is reachable **only** via the explicit **Load Sample Demo** button and triggers a high-visibility amber `SAMPLE DEMO DATA ACTIVE` banner.
+
+---
+
+## 3. Corrupted Storage Quarantine & Error Surface
+
+- All IndexedDB reads (`readValidatedRecord`, `readCachedAirQuality`) validate stored envelopes and payloads via `Zod.safeParse()`. Corrupted entries return `errorCode: 'corrupted'` instead of crashing hydration.
+- Quota errors (`QuotaExceededError`) and failed location/profile writes surface immediately through `storageWarning` in `StatusBanner.tsx`.

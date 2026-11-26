@@ -1,0 +1,87 @@
+import type { HouseholdProfile, LocationPreset, ScheduleSlot } from '../domain/household/types.ts';
+
+const DEFAULT_SCHEDULE_SLOTS: readonly ScheduleSlot[] = [
+  {
+    id: 'slot-morning',
+    period: 'morning',
+    label: 'Morning walk / outdoor routine',
+    startHour: 6,
+    endHour: 8,
+    activityType: 'outdoor_vigorous',
+    enabled: true,
+  },
+  {
+    id: 'slot-commute-am',
+    period: 'commute_am',
+    label: 'Morning school & office commute',
+    startHour: 8,
+    endHour: 10,
+    activityType: 'commute',
+    enabled: true,
+  },
+  {
+    id: 'slot-work-school',
+    period: 'work_school',
+    label: 'Daytime school / work hours',
+    startHour: 10,
+    endHour: 15,
+    activityType: 'indoor',
+    enabled: true,
+  },
+  {
+    id: 'slot-afternoon',
+    period: 'afternoon',
+    label: 'Afternoon school pickup / break',
+    startHour: 15,
+    endHour: 17,
+    activityType: 'outdoor_light',
+    enabled: true,
+  },
+  {
+    id: 'slot-errands',
+    period: 'errands',
+    label: 'Market & household errands',
+    startHour: 17,
+    endHour: 19,
+    activityType: 'errands',
+    enabled: true,
+  },
+  {
+    id: 'slot-evening',
+    period: 'evening',
+    label: 'Evening family & indoor wind-down',
+    startHour: 19,
+    endHour: 22,
+    activityType: 'indoor',
+    enabled: true,
+  },
+];
+
+export const DEFAULT_DEMO_LOCATION: LocationPreset = {
+  id: 'loc-demo-home',
+  label: 'home',
+  customName: 'Home (Demo)',
+  city: 'New Delhi',
+  locality: 'Dwarka Sector 10',
+  state: 'Delhi NCT',
+  latitude: 28.5921,
+  longitude: 77.046,
+  precision: 'locality',
+};
+
+export const DEFAULT_DEMO_HOUSEHOLD: HouseholdProfile = {
+  id: 'household-demo-sharma',
+  name: 'Sharma Family (Demo)',
+  memberCount: 4,
+  primaryCommuteMode: 'car_petrol',
+  commuteDistanceKmOneWay: 18,
+  workPattern: 'office',
+  hasSchoolGoingChildren: true,
+  outdoorExerciseHabit: 'morning_walk_run',
+  protectionFlags: ['children', 'older_adults'],
+  budget: 'low',
+  preferredLanguage: 'en',
+  schedule: [...DEFAULT_SCHEDULE_SLOTS],
+  isDemo: true,
+  updatedAt: '2026-11-25T08:00:00.000Z',
+};

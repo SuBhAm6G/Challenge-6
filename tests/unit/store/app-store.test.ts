@@ -127,7 +127,7 @@ describe('Zustand App Store & Slices', () => {
       responsibleRole: 'RWA Security',
       suggestedDeadline: 'Tomorrow',
       status: 'planned',
-      effort: 'low_cost',
+      effort: 'low',
       explanation: 'Eliminates local PM2.5 hotspot',
     });
     await store.updateCommunityActionStatus('comm-custom', 'completed');
@@ -162,5 +162,100 @@ describe('Zustand App Store & Slices', () => {
     expect(state.aqStatus).toBe('unavailable');
     expect(state.currentReading).not.toBeNull();
     expect(state.aqErrorMessage).toContain('Showing last saved reading');
+  });
+
+  it('propagates storage write failures in location mutations and clears onboarding flag on reset', async () => {
+    window.localStorage.setItem('saansathi_location_prompted', '1');
+    const spy = vi.spyOn(LocalStorageRepo, 'saveLocationPresets').mockResolvedValueOnce({
+      ok: false,
+      errorCode: 'quota_exceeded',
+      message: 'Quota full',
+    });
+
+    await useAppStore.getState().upsertLocationPreset({
+      id: 'loc-pune',
+      label: 'work',
+      city: 'Pune',
+      locality: 'Kothrud',
+      state: 'Maharashtra',
+      latitude: 18.52,
+      longitude: 73.85,
+      precision: 'locality',
+    });
+    expect(useAppStore.getState().saveStatus).toBe('error');
+    expect(useAppStore.getState().storageWarning).toBe('Quota full');
+    spy.mockRestore();
+
+    await useAppStore.getState().resetAllLocalData();
+    expect(window.localStorage.getItem('saansathi_location_prompted')).toBeNull();
+    expect(useAppStore.getState().aqErrorMessage).toBeNull();
+    expect(useAppStore.getState().aiStatus).toBe('ready');
+  });
+
+  it('ignores stale out-of-order AQ responses via single-flight request token', async () => {
+    let resolveSlow!: (res: Response) => void;
+    const slowPromise = new Promise<Response>((r) => {
+      resolveSlow = r;
+    });
+
+    const fetchMock = vi
+      .fn()
+      .mockReturnValueOnce(slowPromise)
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            latitude: 19.07,
+            longitude: 72.87,
+            current: {
+              time: '2026-11-25T11:00',
+              pm2_5: 55,
+              pm10: 95,
+              carbon_monoxide: 900,
+              nitrogen_dioxide: 35,
+              sulphur_dioxide: 10,
+              ozone: 38,
+            },
+            hourly: { time: [], pm2_5: [] },
+          }),
+          { status: 200 },
+        ),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const first = useAppStore.getState().refreshAirQuality(false);
+    await useAppStore.getState().upsertLocationPreset({
+      id: 'loc-fast-mumbai',
+      label: 'work',
+      city: 'Mumbai',
+      locality: 'Bandra',
+      state: 'Maharashtra',
+      latitude: 19.076,
+      longitude: 72.877,
+      precision: 'locality',
+    });
+    expect(useAppStore.getState().currentReading?.city).toBe('Mumbai');
+
+    resolveSlow(
+      new Response(
+        JSON.stringify({
+          latitude: 28.6,
+          longitude: 77.2,
+          current: {
+            time: '2026-11-25T10:00',
+            pm2_5: 250,
+            pm10: 380,
+            carbon_monoxide: 2200,
+            nitrogen_dioxide: 80,
+            sulphur_dioxide: 18,
+            ozone: 40,
+          },
+          hourly: { time: [], pm2_5: [] },
+        }),
+        { status: 200 },
+      ),
+    );
+    await first;
+    // Newer Mumbai selection must not be overwritten by older slow Delhi response
+    expect(useAppStore.getState().currentReading?.city).toBe('Mumbai');
   });
 });

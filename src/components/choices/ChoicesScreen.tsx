@@ -1,10 +1,13 @@
 import { AlertTriangle, ArrowRight, Check, Leaf, Shield } from 'lucide-react';
 import { useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { EMISSION_FACTOR_BY_MODE } from '../../data/emission-factors.ts';
-import type { TransportMode } from '../../domain/household/types.ts';
+import { type TransportMode, TransportModeSchema } from '../../domain/household/types.ts';
+import { parseEnumValue } from '../../domain/select-guards.ts';
 import { buildImpactExplanation, calculateTransportImpact } from '../../engines/impact-engine.ts';
 import { useAppStore } from '../../store/useAppStore.ts';
 import { Badge, Card, PrimaryButton } from '../ui/Primitives.tsx';
+import { ZeroCostHabitsCard } from './ZeroCostHabitsCard.tsx';
 
 const ALTERNATIVE_MODES: readonly TransportMode[] = [
   'metro',
@@ -17,7 +20,14 @@ const ALTERNATIVE_MODES: readonly TransportMode[] = [
 ];
 
 export function ChoicesScreen() {
-  const { householdProfile, aqiResult, recordImpactEntry, setRoute } = useAppStore();
+  const { householdProfile, aqiResult, recordImpactEntry, setRoute } = useAppStore(
+    useShallow((s) => ({
+      householdProfile: s.householdProfile,
+      aqiResult: s.aqiResult,
+      recordImpactEntry: s.recordImpactEntry,
+      setRoute: s.setRoute,
+    })),
+  );
   const [altMode, setAltMode] = useState<TransportMode>('metro');
   const [tripsPerWeek, setTripsPerWeek] = useState<number>(4);
   const [loggedId, setLoggedId] = useState<string | null>(null);
@@ -50,33 +60,33 @@ export function ChoicesScreen() {
   return (
     <div className="space-y-5">
       <Card>
-        <h1 className="text-2xl font-extrabold text-[#1C1917]">
-          Better Choices & Trade-Off Explorer
-        </h1>
-        <p className="mt-1 text-sm text-[#57534E]">
+        <h1 className="text-ink text-2xl font-extrabold">Better Choices & Trade-Off Explorer</h1>
+        <p className="text-ink-muted mt-1 text-sm">
           Compare practical low-emission travel and household alternatives. Saansathi checks both{' '}
           <strong>emissions avoided</strong> and <strong>personal smog exposure</strong> so
           recommendations never contradict each other.
         </p>
 
-        <div className="mt-4 grid gap-4 rounded-2xl border border-[#E4DCCD] bg-[#FAF7F2] p-4 sm:grid-cols-3">
+        <div className="border-border-warm bg-canvas mt-4 grid gap-4 rounded-2xl border p-4 sm:grid-cols-3">
           <div>
-            <span className="text-xs font-bold text-[#57534E] uppercase">Your baseline mode</span>
-            <p className="mt-1 text-sm font-bold text-[#1C1917]">
+            <span className="text-ink-muted text-xs font-bold uppercase">Your baseline mode</span>
+            <p className="text-ink mt-1 text-sm font-bold">
               {EMISSION_FACTOR_BY_MODE.get(householdProfile.primaryCommuteMode)?.label ??
                 householdProfile.primaryCommuteMode}
             </p>
-            <p className="text-xs text-[#57534E]">
+            <p className="text-ink-muted text-xs">
               {householdProfile.commuteDistanceKmOneWay} km one-way
             </p>
           </div>
 
-          <label className="block text-xs font-semibold text-[#44403C]">
+          <label className="text-ink-body block text-xs font-semibold">
             Alternative to evaluate
             <select
               value={altMode}
-              onChange={(e) => setAltMode(e.target.value as TransportMode)}
-              className="mt-1 w-full rounded-xl border border-[#D6CCBA] bg-white px-3 py-2 text-sm"
+              onChange={(e) =>
+                setAltMode(parseEnumValue(TransportModeSchema, e.target.value, altMode))
+              }
+              className="border-border-strong bg-surface mt-1 w-full rounded-xl border px-3 py-2 text-sm"
             >
               {ALTERNATIVE_MODES.map((m) => (
                 <option key={m} value={m}>
@@ -86,7 +96,7 @@ export function ChoicesScreen() {
             </select>
           </label>
 
-          <label className="block text-xs font-semibold text-[#44403C]">
+          <label className="text-ink-body block text-xs font-semibold">
             One-way trips shifted / week
             <input
               type="number"
@@ -96,7 +106,7 @@ export function ChoicesScreen() {
               onChange={(e) =>
                 setTripsPerWeek(Math.max(1, Math.min(14, Number(e.target.value) || 1)))
               }
-              className="mt-1 w-full rounded-xl border border-[#D6CCBA] bg-white px-3 py-2 text-sm"
+              className="border-border-strong bg-surface mt-1 w-full rounded-xl border px-3 py-2 text-sm"
             />
           </label>
         </div>
@@ -106,7 +116,7 @@ export function ChoicesScreen() {
             role="alert"
             className="mt-4 flex items-start gap-2 rounded-xl border border-red-300 bg-red-50 p-3.5 text-sm text-red-950"
           >
-            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[#B91C1C]" aria-hidden="true" />
+            <AlertTriangle className="text-danger-ink mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
             <div>
               <strong>Exposure vs. Emission Trade-off Warning:</strong> Although{' '}
               {EMISSION_FACTOR_BY_MODE.get(altMode)?.label} produces zero tailpipe emissions,
@@ -122,30 +132,28 @@ export function ChoicesScreen() {
 
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
-            <div className="flex items-center gap-2 text-sm font-bold text-[#0F6E56]">
+            <div className="text-brand flex items-center gap-2 text-sm font-bold">
               <Shield className="h-4 w-4" aria-hidden="true" />
               Personal Exposure Consideration
             </div>
-            <p className="mt-2 text-sm text-[#1C1917]">
-              {explanation.personalExposureConsideration}
-            </p>
+            <p className="text-ink mt-2 text-sm">{explanation.personalExposureConsideration}</p>
           </div>
 
           <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
-            <div className="flex items-center gap-2 text-sm font-bold text-[#B45309]">
+            <div className="text-amber-ink flex items-center gap-2 text-sm font-bold">
               <Leaf className="h-4 w-4" aria-hidden="true" />
               Estimated Environmental Impact
             </div>
-            <p className="mt-2 text-sm font-semibold text-[#1C1917]">
+            <p className="text-ink mt-2 text-sm font-semibold">
               {explanation.estimatedEnvironmentalImpact}
             </p>
-            <p className="mt-1 text-xs text-[#57534E]">{explanation.confidenceSummary}</p>
+            <p className="text-ink-muted mt-1 text-xs">{explanation.confidenceSummary}</p>
           </div>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2">
-            <PrimaryButton type="button" onClick={handleLogChoice}>
+            <PrimaryButton type="button" onClick={() => void handleLogChoice()}>
               {loggedId === calc.id + tripsPerWeek + altMode ? (
                 <>
                   <Check className="h-4 w-4" aria-hidden="true" /> Logged to Impact
@@ -154,10 +162,15 @@ export function ChoicesScreen() {
                 'Log This Weekly Shift to Impact'
               )}
             </PrimaryButton>
+            <output aria-live="polite" className="sr-only">
+              {loggedId === calc.id + tripsPerWeek + altMode
+                ? 'Weekly commute shift saved to your impact history.'
+                : ''}
+            </output>
             <button
               type="button"
               onClick={() => setRoute('impact')}
-              className="inline-flex min-h-[44px] items-center gap-1 rounded-xl border border-[#D6CCBA] bg-white px-4 py-2 text-sm font-semibold text-[#1C1917] hover:bg-[#EFE8DA]"
+              className="border-border-strong bg-surface text-ink hover:bg-hover-warm inline-flex min-h-[44px] items-center gap-1 rounded-xl border px-4 py-2 text-sm font-semibold"
             >
               Inspect Impact Math <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -166,32 +179,7 @@ export function ChoicesScreen() {
         </div>
       </Card>
 
-      <Card>
-        <h2 className="text-lg font-bold text-[#1C1917]">Zero-Cost Low-Emission Daily Habits</h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-[#E4DCCD] bg-[#FAF7F2] p-3.5 text-sm">
-            <h3 className="font-bold text-[#1C1917]">Stop idling at signals & gates</h3>
-            <p className="mt-1 text-xs text-[#44403C]">
-              Switching off engines for stops longer than 15–20 seconds cuts needless fuel burn and
-              concentrated exhaust near pedestrians and school gates.
-            </p>
-          </div>
-          <div className="rounded-xl border border-[#E4DCCD] bg-[#FAF7F2] p-3.5 text-sm">
-            <h3 className="font-bold text-[#1C1917]">Consolidate cold-start errands</h3>
-            <p className="mt-1 text-xs text-[#44403C]">
-              Catalytic converters work poorly in the first few minutes of a cold engine. Batching 3
-              short errands into 1 warm-engine loop saves fuel and tailpipe emissions.
-            </p>
-          </div>
-          <div className="rounded-xl border border-[#E4DCCD] bg-[#FAF7F2] p-3.5 text-sm">
-            <h3 className="font-bold text-[#1C1917]">Zero open waste or leaf burning</h3>
-            <p className="mt-1 text-xs text-[#44403C]">
-              Composting garden leaves and reporting municipal waste fires prevents intense local
-              smoke spikes that travel directly into nearby homes.
-            </p>
-          </div>
-        </div>
-      </Card>
+      <ZeroCostHabitsCard />
     </div>
   );
 }

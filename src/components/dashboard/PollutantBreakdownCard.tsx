@@ -6,12 +6,12 @@ import { Badge, Card } from '../ui/Primitives.tsx';
 export function PollutantBreakdownCard({ subIndices }: { subIndices: PollutantSubIndex[] }) {
   return (
     <Card>
-      <h2 className="text-lg font-bold text-[#1C1917]">Pollutant Breakdown</h2>
-      <p className="mb-3 text-xs text-[#57534E]">
+      <h2 className="text-ink text-lg font-bold">Pollutant Breakdown</h2>
+      <p className="text-ink-muted mb-3 text-xs">
         Each pollutant has distinct sources and household implications—never treated identically.
       </p>
       {subIndices.length === 0 ? (
-        <p className="text-sm text-[#57534E]">No pollutant concentrations available.</p>
+        <p className="text-ink-muted text-sm">No pollutant concentrations available.</p>
       ) : (
         <div className="space-y-2">
           {subIndices.map((sub) => {
@@ -20,14 +20,14 @@ export function PollutantBreakdownCard({ subIndices }: { subIndices: PollutantSu
             return (
               <details
                 key={sub.pollutant}
-                className="rounded-xl border border-[#E4DCCD] bg-[#FAF7F2] p-3"
+                className="border-border-warm bg-canvas rounded-xl border p-3"
               >
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
                   <div>
-                    <span className="text-sm font-bold text-[#1C1917]">
+                    <span className="text-ink text-sm font-bold">
                       {info.code} — {info.name}
                     </span>
-                    <span className="ml-2 text-xs text-[#57534E]">
+                    <span className="text-ink-muted ml-2 text-xs">
                       {sub.concentration} {sub.unit}
                     </span>
                   </div>
@@ -39,7 +39,7 @@ export function PollutantBreakdownCard({ subIndices }: { subIndices: PollutantSu
                     Sub-index {sub.subIndex} ({sub.category})
                   </Badge>
                 </summary>
-                <div className="mt-2 space-y-1 border-t border-[#E4DCCD] pt-2 text-xs text-[#44403C]">
+                <div className="border-border-warm text-ink-body mt-2 space-y-1 border-t pt-2 text-xs">
                   <p>
                     <strong>What it is:</strong> {info.whatItIs}
                   </p>
@@ -53,7 +53,7 @@ export function PollutantBreakdownCard({ subIndices }: { subIndices: PollutantSu
                     <strong>Indoor note:</strong> {info.indoorNote}
                   </p>
                   {sub.averagingPeriodWarning && (
-                    <p className="font-medium text-[#B45309]">{sub.averagingPeriodWarning}.</p>
+                    <p className="text-amber-ink font-medium">{sub.averagingPeriodWarning}.</p>
                   )}
                 </div>
               </details>

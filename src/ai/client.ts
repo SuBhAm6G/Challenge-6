@@ -8,7 +8,7 @@ import {
 import { hasUrgentMedicalSymptoms, sanitizeAiResponse } from './safety.ts';
 
 export interface AssistantTurnResult {
-  origin: 'gemini_ai' | 'deterministic_fallback' | 'urgent_medical_redirect';
+  origin: 'groq_ai' | 'deterministic_fallback' | 'urgent_medical_redirect';
   response: AiChatResponse;
   safetyWarnings: string[];
   errorDetail?: string;
@@ -16,6 +16,9 @@ export interface AssistantTurnResult {
 
 const AI_REQUEST_TIMEOUT_MS = 15000;
 
+/**
+ * Builds a verified deterministic fallback reply when Groq AI or connectivity is unavailable.
+ */
 export function buildDeterministicFallbackResponse(
   context: AiContextPackage,
   deterministicRoutine: RoutineRecommendation[],
@@ -53,6 +56,10 @@ export function buildDeterministicFallbackResponse(
   };
 }
 
+/**
+ * Sends a city-minimized clean-air planning query to `/api/chat`, applying urgent medical
+ * symptom redirects, schema verification, safety filtering, and deterministic offline fallback.
+ */
 export async function askSaansathiAssistant(params: {
   question: string;
   context: AiContextPackage;
@@ -125,7 +132,7 @@ export async function askSaansathiAssistant(params: {
 
     const { sanitized, safetyWarnings } = sanitizeAiResponse(parsed.data, params.context);
     return {
-      origin: 'gemini_ai',
+      origin: 'groq_ai',
       response: sanitized,
       safetyWarnings,
     };

@@ -14,7 +14,10 @@ const DEFAULT_GROQ_MODELS = [
   'qwen/qwen3.8-27b',
 ] as const;
 
-function stripJsonFences(raw: string): string {
+/**
+ * Removes optional Markdown JSON code fences around an LLM completion string.
+ */
+export function stripJsonFences(raw: string): string {
   return raw
     .replace(/^```json\s*/i, '')
     .replace(/^```\s*/i, '')
@@ -27,7 +30,11 @@ function buildModelCandidates(configured: string | undefined): string[] {
   return Array.from(new Set(ordered));
 }
 
-function normalizeLlmJson(raw: unknown): unknown {
+/**
+ * Normalizes common LLM JSON shape drift (object-keyed arrays or string lists)
+ * before strict Zod validation.
+ */
+export function normalizeLlmJson(raw: unknown): unknown {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw;
   const obj = { ...(raw as Record<string, unknown>) };
   if (typeof obj.dataLimitations === 'string') obj.dataLimitations = [obj.dataLimitations];
@@ -56,6 +63,10 @@ const JSON_CONTRACT_HINT = `Return ONLY a valid JSON object with these exact key
 - "sourceIdsUsed" (string[])
 - "disclaimer" (string)`;
 
+/**
+ * Handles `POST /api/chat` requests against Groq's OpenAI-compatible chat endpoint
+ * with automatic multi-model fallback and Zod payload gating.
+ */
 export async function handleChatRequest(request: Request): Promise<Response> {
   if (request.method !== 'POST') {
     return jsonResponse(405, { error: 'METHOD_NOT_ALLOWED', message: 'Use POST.' });
@@ -80,7 +91,8 @@ export async function handleChatRequest(request: Request): Promise<Response> {
   let parsedBody: unknown;
   try {
     parsedBody = JSON.parse(rawText);
-  } catch {
+  } catch (err) {
+    void err;
     return jsonResponse(400, { error: 'INVALID_JSON', message: 'Malformed JSON body.' });
   }
 
@@ -141,12 +153,25 @@ export async function handleChatRequest(request: Request): Promise<Response> {
       const text = rawContent ? stripJsonFences(rawContent) : '';
       if (!text) continue;
 
-      const rawJson: unknown = normalizeLlmJson(JSON.parse(text));
+      let parsedJson: unknown;
+      try {
+        parsedJson = JSON.parse(text);
+      } catch (parseErr) {
+        void parseErr;
+        lastStatus = 502;
+        continue;
+      }
+
+      const rawJson: unknown = normalizeLlmJson(parsedJson);
       const checked = ResponseSchema.safeParse(rawJson);
-      if (!checked.success) continue;
+      if (!checked.success) {
+        lastStatus = 502;
+        continue;
+      }
 
       return jsonResponse(200, checked.data);
-    } catch {
+    } catch (networkErr) {
+      void networkErr;
       lastStatus = 502;
     }
   }

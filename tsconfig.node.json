@@ -27,5 +27,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts", "api"]
+  "include": ["vite.config.ts", "api", "src/data/evidence-ids.ts", "src/ai/schemas.ts"]
 }
