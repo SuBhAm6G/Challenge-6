@@ -1,0 +1,66 @@
+{
+  "name": "Saansathi",
+  "tagline": "Make everyday choices for cleaner air.",
+  "challenge": "PromptWars Challenge 6 — Urban Air Quality & Clean-Air Planning",
+  "liveUrl": "https://saansathi.vercel.app/",
+  "architecture": "Functional Core / Imperative Shell (Vite + React 19 + TypeScript Strict + Zustand + IndexedDB PWA + Vercel Serverless)",
+  "aiProvider": {
+    "provider": "Groq",
+    "primaryModel": "openai/gpt-oss-120b",
+    "fallbackModels": ["openai/gpt-oss-20b", "qwen/qwen3.8-27b"],
+    "endpoint": "/api/chat",
+    "offlineFallback": "Deterministic local rule engine (buildDeterministicFallbackResponse)"
+  },
+  "dataSources": [
+    "CPCB India National Air Quality Index (NAQI 2014)",
+    "Open-Meteo Copernicus CAMS (~11 km atmospheric forecast)",
+    "WHO Global Air Quality Guidelines (2021)",
+    "US EPA Portable Air Cleaners & Cleaner-Room Guides",
+    "WRI India / India GHG Program & CEA Emission Factors"
+  ],
+  "verification": {
+    "typescriptErrors": 0,
+    "oxlintWarnings": 0,
+    "oxlintFilesScanned": 105,
+    "maxLinesPerSourceModule": 200,
+    "vitestFiles": 20,
+    "vitestTestsPassing": 147,
+    "coverage": {
+      "scope": ["src/", "api/"],
+      "statementsPct": 93.38,
+      "branchesPct": 82.96,
+      "functionsPct": 93.47,
+      "linesPct": 95.46
+    },
+    "playwrightE2eWorkflowsPassing": 4,
+    "axeCoreViolations": {
+      "unitAllRoutesAndModals": 0,
+      "chromiumContrastAndWcagAA": 0
+    },
+    "productionBuild": {
+      "gzipMainBundleKb": 105.67,
+      "workboxPrecacheEntries": 20,
+      "workboxPrecacheSizeKiB": 568.24
+    }
+  },
+  "documentation": {
+    "root": [
+      "README.md",
+      "PROBLEM_ALIGNMENT.md",
+      "CODE_QUALITY.md",
+      "EFFICIENCY.md",
+      "SECURITY.md",
+      "CONTRIBUTING.md",
+      "LICENSE"
+    ],
+    "docs": [
+      "docs/ARCHITECTURE.md",
+      "docs/ACCESSIBILITY.md",
+      "docs/TESTING.md",
+      "docs/SECURITY.md",
+      "docs/DATA_SOURCES.md",
+      "docs/OFFLINE_SUPPORT.md",
+      "docs/DEPLOYMENT.md"
+    ]
+  }
+}

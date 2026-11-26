@@ -19,18 +19,39 @@
 
 ## Table of Contents
 
-1. [Executive Summary: Eliminating AQI Dashboard & LLM Failure Modes](#executive-summary-eliminating-aqi-dashboard--llm-failure-modes)
-2. [Evaluation Criteria Mapping Matrix](#evaluation-criteria-mapping-matrix)
-3. [How Saansathi Solves Every Challenge 6 Requirement](#how-saansathi-solves-every-challenge-6-requirement)
-4. [System Architecture & Visual Diagrams (Mermaid)](#system-architecture--visual-diagrams-mermaid)
-5. [Domain Engineering & Scientific Mathematics](#domain-engineering--scientific-mathematics)
-6. [Defensive Engineering & Failure-Mode Matrix](#defensive-engineering--failure-mode-matrix)
-7. [Design Patterns, Type Safety & Algorithmic Complexity Proofs](#design-patterns-type-safety--algorithmic-complexity-proofs)
-8. [Serverless GenAI Endpoint Specification (`/api/chat`)](#serverless-genai-endpoint-specification-apichat)
-9. [Accessibility Architecture (WCAG 2.1 AA + Real-Browser `axe-core`)](#accessibility-architecture-wcag-21-aa--real-browser-axe-core)
-10. [Production Bundle Footprint, Coverage & Automated Verification](#production-bundle-footprint-coverage--automated-verification)
-11. [Repository Structure & Modularity Budget (`<= 200` Lines)](#repository-structure--modularity-budget--200-lines)
-12. [Frequently Asked Questions (FAQ) & Technical Documentation Index](#frequently-asked-questions-faq--technical-documentation-index)
+1. [Chosen Vertical, Personas & Explicit Engineering Assumptions](#chosen-vertical-personas--explicit-engineering-assumptions)
+2. [Executive Summary: Eliminating AQI Dashboard & LLM Failure Modes](#executive-summary-eliminating-aqi-dashboard--llm-failure-modes)
+3. [Evaluation Criteria Mapping Matrix](#evaluation-criteria-mapping-matrix)
+4. [How Saansathi Solves Every Challenge 6 Requirement](#how-saansathi-solves-every-challenge-6-requirement)
+5. [System Architecture & Visual Diagrams (Mermaid)](#system-architecture--visual-diagrams-mermaid)
+6. [Domain Engineering & Scientific Mathematics](#domain-engineering--scientific-mathematics)
+7. [Defensive Engineering, CWE Mitigations & Failure-Mode Matrix](#defensive-engineering-cwe-mitigations--failure-mode-matrix)
+8. [Design Patterns, Type Safety & Algorithmic Complexity Proofs](#design-patterns-type-safety--algorithmic-complexity-proofs)
+9. [Serverless GenAI Endpoint Specification (`/api/chat`)](#serverless-genai-endpoint-specification-apichat)
+10. [Accessibility Architecture (WCAG 2.1 AA + Real-Browser `axe-core`)](#accessibility-architecture-wcag-21-aa--real-browser-axe-core)
+11. [Production Bundle Footprint, Coverage & Automated Verification](#production-bundle-footprint-coverage--automated-verification)
+12. [Repository Structure & Modularity Budget (`<= 200` Lines)](#repository-structure--modularity-budget--200-lines)
+13. [Frequently Asked Questions (FAQ) & Technical Documentation Index](#frequently-asked-questions-faq--technical-documentation-index)
+
+---
+
+## Chosen Vertical, Personas & Explicit Engineering Assumptions
+
+### Selected Domain & Target Personas
+
+**Urban Air Quality, Household Resilience & Community Clean-Air Planning (India).**
+Saansathi addresses severe urban pollution and winter inversion episodes across Indian cities by serving four distinct user personas with dedicated workflows:
+
+1. **Urban Families:** Households scheduling morning walks, school commutes, and afternoon play safely around diurnal $\text{PM}_{2.5}/\text{PM}_{10}$ curves.
+2. **Health-Conscious Households:** Homes protecting children, older adults (`60+`), pregnant members, or sensitive individuals using local-only priority protection toggles without storing clinical records.
+3. **Daily Commuters:** Travellers comparing 12 Indian transport modes across decoupled **Personal Exposure** and **WRI India Avoided $\text{CO}\_2\text{e}$**.
+4. **Resident Communities (RWAs & Schools):** Coordinators managing local action checklists and privacy-safe summaries without unverified social feeds.
+
+### Explicit Assumptions & Honest Scientific Limitations
+
+- **Spatial Model Resolution (`~11 km`):** Open-Meteo Copernicus CAMS forecasts represent regional grid estimates rather than roadside or rooftop CPCB regulatory stations; Saansathi discloses this caveat on every dashboard and chart.
+- **Averaging-Period Honesty:** Hourly forecast model values (`1h`) are mapped transparently against CPCB's `24h` / `8h` breakpoint tables with an explicit `averagingPeriodWarning` whenever intervals differ.
+- **Null-Preserving Telemetry & Factors:** Missing pollutants and vehicle-specific tailpipe $\text{PM}_{2.5}/\text{NO}_x$ rates (`car_ev`, `bus`, `metro`) remain `null` (`"Omitted (varies)"`)—never fabricated from $\text{CO}_2\text{e}$.
 
 ---
 
@@ -58,16 +79,16 @@ $$\textbf{LOCATE} \longrightarrow \textbf{ASSESS} \longrightarrow \textbf{UNDERS
 
 ## Evaluation Criteria Mapping Matrix
 
-Every evaluation dimension maps directly to verifiable source modules, design patterns, and automated CI checks:
+Every evaluation dimension maps directly to dedicated root proof documents, verifiable source modules, and automated CI checks:
 
-| Dimension                       | Architectural Evidence                                                                                                                                                                                                                                                       | Verifying Files & Automated Checks                                                                                                              | Measured Proof                                                                      |
-| :------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------- |
-| **Problem Statement Alignment** | Complete Challenge 6 persona parity (Families, Health-Conscious, Commuters, Communities), CPCB NAQI first, exposure-vs-emission separation, zero vaporware                                                                                                                   | `src/engines/*`, `src/components/*`, `tests/integration/end-to-end-pipeline.test.ts`                                                            | **7/7 routes** + full deterministic GUI fallback                                    |
-| **Code Quality**                | TypeScript `strict` + `noUncheckedIndexedAccess` across `src/`, `api/`, and `tests/`; zero `any`, zero `!`, zero unvalidated `<select>` casts; `useShallow` selectors; modular Zustand slices; every `src/` & `api/` file `<= 200` lines; Tailwind v4 `@theme` design tokens | `tsconfig.json`, `tsconfig.test.json`, `src/store/*`, `src/domain/select-guards.ts`, `.oxlintrc.json`, `tests/quality/hygiene.test.ts`          | **0 TS errors · 0 Oxlint warnings** (`105` files) · **100% modules `<= 200` lines** |
-| **Efficiency**                  | Zero-dependency responsive HTML/CSS hourly chart, `React.lazy()` route code splitting, `useShallow` store selectors, 300 ms debounced IndexedDB writes, $O(1)$ pre-indexed `ReadonlyMap`/`Set` lookups                                                                       | `src/App.tsx`, `src/components/dashboard/HourlyForecastChart.tsx`, `src/components/community/CommunityScreen.tsx`, `vite.config.ts`             | **105.7 kB** gzipped main chunk · **669 ms** Vite build                             |
-| **Testing**                     | 147 Vitest tests (deterministic engines, Zod domain contracts, Open-Meteo adapter, IndexedDB quarantine, Zustand concurrency, `/api/chat` fallback & rate-limit, screens, modals, onboarding, `ErrorBoundary`, `axe-core`) + 4 Playwright Chromium E2E workflows             | `vitest.config.ts`, `tests/unit/**`, `tests/integration/**`, `tests/quality/**`, `tests/e2e/saansathi.spec.ts`                                  | **147 / 147 Vitest (`93.38%` stmts, `95.46%` lines)** · **4 / 4 Playwright**        |
-| **Security**                    | Server-only `GROQ_API_KEY`, 20 req/min rate limit, 8 KB body cap, single-source Zod request/response gating, delimited prompt boundaries, urgent `112/108` redirect, strict CSP & HSTS headers                                                                               | `api/chat.ts`, `api/_guardrails.ts`, `src/ai/safety.ts`, `vercel.json`, `tests/unit/ai/server-endpoint.test.ts`                                 | **Zero client secrets** · verified in unit + CI tests                               |
-| **Accessibility**               | WCAG 2.1 AA landmarks, keyboard skip link, `>= 44×44 px` touch targets, `scope="col"` + `<caption>` tables, `aria-pressed` stateful toggles, cross-viewport `<output aria-live="polite">`, SVG-to-table toggle, real-Chromium `axe-core` contrast verification               | `src/components/layout/AppShell.tsx`, `src/components/ui/Primitives.tsx`, `tests/unit/ui/accessibility.test.tsx`, `tests/e2e/saansathi.spec.ts` | **0 `axe-core` violations** (unit all-routes + Playwright Chromium CSS contrast)    |
+| Dimension                       | Architectural & Root Document Proof                                                                                                                                                                                                                                     | Verifying Files & Automated Checks                                                                                                     | Measured Proof                                                                      |
+| :------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------- |
+| **Problem Statement Alignment** | [PROBLEM_ALIGNMENT.md](PROBLEM_ALIGNMENT.md) — Complete Challenge 6 persona parity, CPCB NAQI first, exposure-vs-emission separation, zero vaporware                                                                                                                    | `src/engines/*`, `src/components/*`, `tests/integration/end-to-end-pipeline.test.ts`                                                   | **7/7 routes** + full deterministic GUI fallback                                    |
+| **Code Quality**                | [CODE_QUALITY.md](CODE_QUALITY.md) — TypeScript `strict` + `noUncheckedIndexedAccess` across `src/`, `api/`, `tests/`; zero `any`/`!`/casts; `useShallow` selectors; modular Zustand slices; every `src/` & `api/` file `<= 200` lines; Tailwind v4 `@theme` tokens     | `tsconfig.json`, `tsconfig.test.json`, `src/store/*`, `src/domain/select-guards.ts`, `.oxlintrc.json`, `tests/quality/hygiene.test.ts` | **0 TS errors · 0 Oxlint warnings** (`105` files) · **100% modules `<= 200` lines** |
+| **Efficiency**                  | [EFFICIENCY.md](EFFICIENCY.md) — Zero-dependency responsive hourly chart, `React.lazy()` route code splitting, `useShallow` selectors, 300 ms debounced IndexedDB writes, $O(1)$ pre-indexed `ReadonlyMap`/`Set` lookups                                                | `src/App.tsx`, `HourlyForecastChart.tsx`, `CommunityScreen.tsx`, `vite.config.ts`                                                      | **105.67 kB** gzipped main chunk · **416 ms** Vite build                            |
+| **Testing**                     | [docs/TESTING.md](docs/TESTING.md) — 147 Vitest tests (engines, Zod contracts, Open-Meteo, IndexedDB quarantine, store concurrency, `/api/chat`, UI, onboarding, `ErrorBoundary`, `axe-core`) + 4 Playwright Chromium E2E workflows                                     | `vitest.config.ts`, `tests/unit/**`, `tests/integration/**`, `tests/quality/**`, `tests/e2e/saansathi.spec.ts`                         | **147 / 147 Vitest (`93.38%` stmts, `95.46%` lines)** · **4 / 4 Playwright**        |
+| **Security**                    | [SECURITY.md](SECURITY.md) & [docs/SECURITY.md](docs/SECURITY.md) — Server-only `GROQ_API_KEY`, 20 req/min rate limit, 8 KB cap, shared Zod gating, prompt boundaries, urgent `112/108` redirect, CSP/HSTS headers                                                      | `api/chat.ts`, `api/_guardrails.ts`, `src/ai/safety.ts`, `vercel.json`, `tests/unit/ai/server-endpoint.test.ts`                        | **Zero client secrets** · CWE-798/209/20/770 mitigated                              |
+| **Accessibility**               | [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) — WCAG 2.1 AA landmarks, skip link, `>= 44×44 px` targets, `scope="col"` + `<caption>` tables, `aria-pressed` toggles, cross-viewport `<output aria-live="polite">`, chart-to-table toggle, Chromium `axe-core` contrast | `src/components/layout/AppShell.tsx`, `Primitives.tsx`, `tests/unit/ui/accessibility.test.tsx`, `tests/e2e/saansathi.spec.ts`          | **0 `axe-core` violations** (unit all-routes + Playwright Chromium CSS contrast)    |
 
 ---
 
@@ -248,7 +269,14 @@ $$I_p = \frac{I_{\text{Hi}} - I_{\text{Lo}}}{C_{\text{Hi}} - C_{\text{Lo}}} \lef
 
 ---
 
-## Defensive Engineering & Failure-Mode Matrix
+## Defensive Engineering, CWE Mitigations & Failure-Mode Matrix
+
+### Security & CWE Threat-Model Mitigations
+
+- **CWE-798 (Hardcoded Credentials Prevention):** `GROQ_API_KEY` lives strictly on the server (`api/chat.ts`), `.env*` local secrets are git-ignored while preserving `.env.example`, and `tests/quality/hygiene.test.ts` enforces regex key-leak checks.
+- **CWE-209 (Generation of Error Message Containing Sensitive Information):** `api/chat.ts` returns typed generic error codes (`MISSING_API_KEY`, `AI_PROVIDER_ERROR`, `VALIDATION_ERROR`) without exposing upstream headers, stack traces, or keys.
+- **CWE-20 (Improper Input Validation):** Single-source Zod schemas (`src/ai/schemas.ts`, `api/_guardrails.ts`, `src/storage/db.ts`) validate every HTTP body, Open-Meteo payload, and IndexedDB record prior to use.
+- **CWE-770 (Allocation of Resources Without Limits):** `POST /api/chat` enforces an `8 KB` (`8192`-byte) body cap (`413`) and an IP-keyed sliding-window rate limiter (`20 req / 60s -> 429`).
 
 | Failure Mode / Edge Case                     | Detection Mechanism                           | Graceful Recovery Behavior                                                                                               | Verifying Test                            |
 | :------------------------------------------- | :-------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------- | :---------------------------------------- |
@@ -324,13 +352,13 @@ Let $P \le 6$ be measured pollutants, $B = 6$ CPCB brackets per pollutant, $H \l
 | Asset / Chunk                                             |         Raw Size |                Gzip Size | Strategy                                         |
 | :-------------------------------------------------------- | ---------------: | -----------------------: | :----------------------------------------------- |
 | `dist/index.html`                                         |        `1.06 kB` |                `0.55 kB` | Minimal SPA shell + manifest links               |
-| `dist/assets/index-*.css`                                 |       `32.57 kB` |                `6.79 kB` | Tailwind CSS v4 `@theme` high-contrast palette   |
-| `dist/assets/index-*.js`                                  |      `341.26 kB` |              `105.70 kB` | React 19 runtime + Home dashboard                |
+| `dist/assets/index-*.css`                                 |       `32.27 kB` |                `6.74 kB` | Tailwind CSS v4 `@theme` high-contrast palette   |
+| `dist/assets/index-*.js`                                  |      `341.16 kB` |              `105.67 kB` | React 19 runtime + Home dashboard                |
 | `dist/assets/state-*.js`                                  |       `93.46 kB` |               `26.86 kB` | Vendor split (`zustand`, `idb`, `zod`)           |
 | `dist/assets/radix-*.js`                                  |       `50.71 kB` |               `16.84 kB` | Accessible `@radix-ui/react-dialog` primitives   |
 | `Routine` / `Choices` / `Impact` / `Indoor` / `Community` |   `5.7 – 7.9 kB` |           `1.8 – 2.6 kB` | On-demand `React.lazy()` route chunks            |
 | `AssistantScreen`                                         |       `16.10 kB` |                `6.13 kB` | On-demand AI assistant chunk                     |
-| **Workbox Service Worker**                                | **`568.73 KiB`** | **20 precached entries** | Runtime Open-Meteo `NetworkFirst` cache (1h TTL) |
+| **Workbox Service Worker**                                | **`568.24 KiB`** | **20 precached entries** | Runtime Open-Meteo `NetworkFirst` cache (1h TTL) |
 
 ### V8 Coverage Summary (`npm run coverage`)
 
@@ -338,7 +366,7 @@ Enforced thresholds in `vitest.config.ts` (`statements >= 90%`, `branches >= 82%
 
 | Scope                                                        |  Statements  |   Branches   |  Functions   |    Lines     |
 | :----------------------------------------------------------- | :----------: | :----------: | :----------: | :----------: |
-| **All Measured (`src/` + `api/`)**                           | **`93.38%`** | **`82.87%`** | **`93.47%`** | **`95.46%`** |
+| **All Measured (`src/` + `api/`)**                           | **`93.38%`** | **`82.96%`** | **`93.47%`** | **`95.46%`** |
 | `api/` (`chat.ts`, `_guardrails.ts`)                         |   `93.40%`   |   `89.83%`   |  `100.00%`   |   `93.97%`   |
 | `src/engines/` (all 10 modules)                              |   `93.92%`   |   `88.85%`   |  `100.00%`   |   `96.88%`   |
 | `src/ai/` (`context-builder`, `safety`, `schemas`, `client`) |   `93.65%`   |   `86.95%`   |   `81.25%`   |   `98.30%`   |
@@ -422,6 +450,9 @@ Reducing tailpipe emissions (`Environmental Emissions`) and lowering particulate
 
 | Document                                           | Focus                                                                                  |
 | :------------------------------------------------- | :------------------------------------------------------------------------------------- |
+| [PROBLEM_ALIGNMENT.md](PROBLEM_ALIGNMENT.md)       | Challenge 6 persona RTM traceability & zero-vaporware proofs                           |
+| [CODE_QUALITY.md](CODE_QUALITY.md)                 | Strict TS, zero-any, `<=200`-line modularity, `useShallow` & `ErrorBoundary` proof     |
+| [EFFICIENCY.md](EFFICIENCY.md)                     | Zero-chart-lib rendering, lazy routes, Workbox PWA & $O(1)/O(H \log H)$ complexity     |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)       | Core/Shell design, modular Zustand slices, `ErrorBoundary`, shared contracts           |
 | [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md)       | CPCB NAQI equations, Open-Meteo, WHO, US EPA & WRI India provenance                    |
 | [docs/SECURITY.md](docs/SECURITY.md)               | `GROQ_API_KEY` server isolation, rate limiting, Zod gates, safety sanitization         |
@@ -429,5 +460,7 @@ Reducing tailpipe emissions (`Environmental Emissions`) and lowering particulate
 | [docs/TESTING.md](docs/TESTING.md)                 | 147 Vitest tests + 4 Playwright E2E workflows + V8 coverage breakdown                  |
 | [docs/OFFLINE_SUPPORT.md](docs/OFFLINE_SUPPORT.md) | Workbox precaching, IndexedDB quarantine, timestamp preservation                       |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)           | Vercel production setup, environment variables, GitHub Actions CI                      |
-| [SECURITY.md](SECURITY.md)                         | Vulnerability disclosure policy & privacy guarantees                                   |
+| [SECURITY.md](SECURITY.md)                         | Vulnerability disclosure policy, threat model & privacy guarantees                     |
 | [CONTRIBUTING.md](CONTRIBUTING.md)                 | Local development setup, strict TS/hygiene invariants & PR gate                        |
+| [metadata.json](metadata.json)                     | Machine-readable project stack, model & verified test/coverage summary                 |
+| [LICENSE](LICENSE)                                 | MIT open-source license                                                                |

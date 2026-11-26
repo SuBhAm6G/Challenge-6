@@ -1,0 +1,23 @@
+repos:
+  - repo: local
+    hooks:
+      - id: saansathi-typecheck
+        name: Strict TypeScript Check (src, api, tests)
+        entry: npm run typecheck
+        language: system
+        pass_filenames: false
+      - id: saansathi-lint
+        name: Oxlint Static & JSX Accessibility Check
+        entry: npm run lint
+        language: system
+        pass_filenames: false
+      - id: saansathi-format
+        name: Prettier + Tailwind Format Check
+        entry: npm run format:check
+        language: system
+        pass_filenames: false
+      - id: saansathi-hygiene
+        name: Automated Repository Hygiene Gate
+        entry: npx vitest run tests/quality/hygiene.test.ts
+        language: system
+        pass_filenames: false

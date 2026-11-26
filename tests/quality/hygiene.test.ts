@@ -39,6 +39,12 @@ describe('Automated Repository Hygiene', () => {
       'docs/OFFLINE_SUPPORT.md',
       'docs/DEPLOYMENT.md',
       '.github/workflows/ci.yml',
+      '.pre-commit-config.yaml',
+      'LICENSE',
+      'metadata.json',
+      'CODE_QUALITY.md',
+      'EFFICIENCY.md',
+      'PROBLEM_ALIGNMENT.md',
     ];
     for (const relPath of required) {
       expect(existsSync(join(ROOT, relPath)), `Missing required file: ${relPath}`).toBe(true);
